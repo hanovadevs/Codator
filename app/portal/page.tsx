@@ -1,20 +1,20 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { IdCard, Calendar, ArrowRight, Award, Flame, Zap } from "lucide-react";
+import { IdCard, Calendar, ArrowRight, Award, Flame, Zap, Megaphone, Info, AlertTriangle, Briefcase } from "lucide-react";
 
-export const revalidate = 0;
+export const revalidate = 0; // Dynamic dashboard
 
 export default async function PortalDashboardPage() {
   const supabase = await createClient();
 
-  // 1. Get user and member details
+  // 1. Get user and member details (including position)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, full_name, codator_id, department, batch_year")
+    .select("id, full_name, codator_id, department, batch_year, position")
     .or(`user_id.eq.${user?.id},email.eq.${user?.email}`)
     .single();
 
@@ -37,6 +37,13 @@ export default async function PortalDashboardPage() {
     .order("date_start", { ascending: true })
     .limit(2);
 
+  // 4. Fetch latest 3 announcements
+  const { data: announcements } = await supabase
+    .from("announcements")
+    .select("id, title, content, category, created_at")
+    .order("created_at", { ascending: false })
+    .limit(3);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -44,6 +51,33 @@ export default async function PortalDashboardPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Icon mapping for announcements
+  const getAnnouncementIcon = (category: string) => {
+    switch (category) {
+      case "urgent":
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case "opportunity":
+        return <Briefcase className="h-4 w-4 text-emerald-600" />;
+      case "event":
+        return <Calendar className="h-4 w-4 text-purple-600" />;
+      default:
+        return <Info className="h-4 w-4 text-blue-600" />;
+    }
+  };
+
+  const getAnnouncementBadgeClass = (category: string) => {
+    switch (category) {
+      case "urgent":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "opportunity":
+        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      case "event":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      default:
+        return "bg-blue-50 text-blue-700 border-blue-200";
+    }
   };
 
   return (
@@ -54,7 +88,7 @@ export default async function PortalDashboardPage() {
           Welcome back, <span className="text-wisteria">{member.full_name}</span>!
         </h1>
         <p className="text-sm text-ink/65">
-          Manage your membership, view your digital pass, and register for upcoming events.
+          Manage your membership, view your digital pass, and stay updated with society announcements.
         </p>
       </div>
 
@@ -112,12 +146,12 @@ export default async function PortalDashboardPage() {
           </div>
         </div>
 
-        {/* Stat 3: Society Role */}
+        {/* Stat 3: Society Position */}
         <div className="group border border-mist bg-paper/30 p-6 rounded-2xl shadow-sm flex flex-col justify-between hover:border-wisteria/30 transition-all duration-350">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <span className="text-2xs font-bold uppercase tracking-wider text-ink/50">Affiliation</span>
-              <h3 className="text-lg font-bold text-ink">CODATOR Society</h3>
+              <h3 className="text-lg font-bold text-ink">{member.position || "Member"}</h3>
             </div>
             <div className="rounded-lg bg-wisteria-tint p-2 text-wisteria border border-wisteria/10">
               <Award className="h-5 w-5" />
@@ -134,6 +168,44 @@ export default async function PortalDashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Announcements Broadcast Section */}
+      <div className="border border-mist rounded-3xl bg-paper/30 p-6 space-y-6">
+        <h3 className="font-display text-lg font-bold border-b border-mist pb-3 flex items-center gap-2">
+          <Megaphone className="h-4.5 w-4.5 text-wisteria" />
+          <span>Announcements Broadcast</span>
+        </h3>
+
+        {!announcements || announcements.length === 0 ? (
+          <p className="text-xs text-ink/50 italic text-center py-4">No society announcements posted recently.</p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3">
+            {announcements.map((ann) => (
+              <div
+                key={ann.id}
+                className="flex flex-col justify-between rounded-2xl border border-mist bg-paper/50 p-5 space-y-3 shadow-xs hover:shadow-md transition-all duration-300"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex items-center gap-0.5 text-5xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${getAnnouncementBadgeClass(ann.category)}`}>
+                      {getAnnouncementIcon(ann.category)}
+                      {ann.category}
+                    </span>
+                    <span className="text-5xs font-semibold text-ink/40">
+                      {new Date(ann.created_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-ink line-clamp-1 leading-snug">{ann.title}</h4>
+                  <p className="text-4xs font-semibold text-ink/65 leading-relaxed line-clamp-4 whitespace-pre-wrap">{ann.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Two-Column Section */}

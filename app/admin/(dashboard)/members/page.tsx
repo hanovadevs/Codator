@@ -10,8 +10,9 @@ export default async function AdminMembersPage() {
   const { data: members, error } = await supabase
     .from("members")
     .select(
-      "id, full_name, university_roll, department, batch_year, email, phone, why_join, skills, status, codator_id, role, applied_at, approved_at"
+      "id, full_name, university_roll, department, batch_year, email, phone, why_join, skills, status, codator_id, role, position, applied_at, approved_at"
     )
+
     .order("applied_at", { ascending: false });
 
   if (error) {
