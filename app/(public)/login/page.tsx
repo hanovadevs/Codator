@@ -76,39 +76,21 @@ export default function PortalLoginPage() {
     }
 
     try {
-      // 2. Query public.members to verify email status
-      const { data: member, error: memberError } = await supabase
-        .from("members")
-        .select("id, status")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (memberError) {
-        throw new Error("Database verification error. Please try again.");
-      }
-
-      if (!member) {
-        throw new Error("This email is not registered in our society database. Please apply to join first.");
-      }
-
-      if (member.status === "pending") {
-        throw new Error("Your membership application is still pending. You will receive an email once approved.");
-      }
-
-      if (member.status === "rejected" || member.status === "suspended") {
-        throw new Error("Your membership account is suspended or inactive. Please contact the administrator.");
-      }
-
-      // 3. Email is registered and active! Trigger Supabase Auth Signup
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
+      // 2. Call the server-side Activation API
+      const response = await fetch("/api/auth/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (signUpError) throw signUpError;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to activate account.");
+      }
 
       setSuccessMsg(
-        "Account activated successfully! Please check your email for the verification link to complete your login."
+        data.message || "Account activated successfully! Please check your email for the confirmation link."
       );
       
       // Reset form
@@ -120,6 +102,7 @@ export default function PortalLoginPage() {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-paper pt-28 pb-20 text-ink flex items-center justify-center px-4 relative overflow-hidden">
