@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPassToken } from "@/lib/pass-token";
 import { CheckCircle2, XCircle, ShieldCheck, Award, ArrowRight } from "lucide-react";
 
@@ -17,7 +17,7 @@ export default async function PublicVerifyPage({ searchParams }: VerifyPageProps
   let errorDetail = "";
 
   if (id && token) {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // 1. Fetch member details from database
     const { data, error } = await supabase
@@ -25,6 +25,7 @@ export default async function PublicVerifyPage({ searchParams }: VerifyPageProps
       .select("id, full_name, codator_id, department, batch_year, status")
       .eq("id", id)
       .maybeSingle();
+
 
     if (error || !data) {
       errorDetail = "Member record not found.";
