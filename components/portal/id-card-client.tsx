@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Download, HelpCircle, RefreshCw, CheckCircle } from "lucide-react";
+import { Download, RefreshCw, Mail, Phone, Hash, Award, CheckCircle, Shield } from "lucide-react";
 
 interface MemberPayload {
   id: string;
@@ -10,7 +10,11 @@ interface MemberPayload {
   codator_id: string;
   department: string;
   batch_year: string;
-  pass_token: string;
+  university_roll: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  skills: string[];
 }
 
 interface IdCardClientProps {
@@ -64,7 +68,6 @@ export default function IdCardClient({ member, qrCodeUrl }: IdCardClientProps) {
     }
   };
 
-  // Generate initials for avatar
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -96,94 +99,147 @@ export default function IdCardClient({ member, qrCodeUrl }: IdCardClientProps) {
           }}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ type: "spring", damping: 20, stiffness: 80 }}
-          className="w-full h-full relative duration-150 rounded-3xl border border-mist shadow-2xl"
+          className="w-full h-full relative duration-150 rounded-3xl border border-mist/80 shadow-xl"
         >
-          {/* ================= CARD FRONT ================= */}
+          {/* ================= CARD FRONT (LIGHT THEME) ================= */}
           <div
             style={{ backfaceVisibility: "hidden" }}
-            className="absolute inset-0 w-full h-full bg-[#13121A] rounded-3xl p-7 flex flex-col justify-between overflow-hidden border border-wisteria/15"
+            className="absolute inset-0 w-full h-full bg-white/90 backdrop-blur-md rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-white/60"
           >
-            {/* Ambient Background Glows */}
-            <div className="absolute -top-24 -left-24 h-48 w-48 rounded-full bg-wisteria/20 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -right-24 h-48 w-48 rounded-full bg-skyline/20 blur-3xl pointer-events-none" />
+            {/* Ambient Background Glows (Mesh pastel gradients) */}
+            <div className="absolute -top-32 -left-32 h-64 w-64 rounded-full bg-wisteria/15 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-skyline/15 blur-3xl pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-40 w-40 rounded-full bg-amber-200/10 blur-2xl pointer-events-none" />
 
-            {/* Header */}
+            {/* Top Bar */}
             <div className="flex justify-between items-start z-10">
               <div className="flex flex-col">
-                <span className="font-display text-lg font-black tracking-tight text-wisteria">CODATOR</span>
-                <span className="text-4xs font-bold uppercase tracking-wider text-ink/40 mt-0.5">Member Identity</span>
+                <span className="font-display text-lg font-black tracking-tight bg-gradient-to-r from-wisteria to-skyline bg-clip-text text-transparent">
+                  CODATOR
+                </span>
+                <span className="text-5xs font-bold uppercase tracking-widest text-ink/45 mt-0.5">
+                  Member Identity
+                </span>
               </div>
-              <div className="h-8 w-11 rounded bg-gradient-to-tr from-amber-400/40 via-yellow-300/30 to-amber-200/50 border border-amber-300/20 relative overflow-hidden shadow-inner flex items-center justify-center opacity-85">
-                {/* Holographic foil chip lines */}
-                <div className="absolute inset-x-3 inset-y-2 border-r border-b border-amber-500/25" />
-                <div className="absolute inset-x-1 inset-y-3.5 border-t border-b border-amber-500/25" />
+              
+              <div className="flex items-center gap-1.5">
+                <span className="rounded-full bg-wisteria/10 border border-wisteria/20 px-2.5 py-0.5 text-5xs font-bold uppercase tracking-wider text-wisteria flex items-center gap-1">
+                  <span className="h-1 w-1 rounded-full bg-wisteria animate-pulse" />
+                  {member.role === "admin" ? "Admin" : "Member"}
+                </span>
+                
+                {/* Holographic Chip */}
+                <div className="h-7 w-9 rounded-md bg-gradient-to-tr from-slate-300 via-slate-100 to-slate-200 border border-slate-200/60 relative overflow-hidden shadow-xs flex items-center justify-center opacity-90">
+                  <div className="absolute inset-x-2.5 inset-y-1.5 border-r border-b border-slate-400/20" />
+                  <div className="absolute inset-x-0.5 inset-y-2.5 border-t border-b border-slate-400/20" />
+                </div>
               </div>
             </div>
 
-            {/* Center Avatar & Name */}
-            <div className="flex flex-col items-center text-center z-10 my-auto">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-wisteria to-skyline flex items-center justify-center font-display text-xl font-bold text-paper shadow-md border border-paper/10 mb-4">
+            {/* Profile Info */}
+            <div className="flex gap-4 items-center z-10 my-auto">
+              {/* Avatar */}
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-wisteria-tint via-white to-skyline-tint flex items-center justify-center font-display text-base font-extrabold text-wisteria shadow-sm border border-wisteria/20 flex-shrink-0">
                 {getInitials(member.full_name)}
               </div>
-              <h2 className="font-display text-lg font-bold text-paper tracking-tight leading-snug line-clamp-1">
-                {member.full_name}
-              </h2>
-              <span className="text-3xs text-ink/50 font-semibold mt-1">{member.department}</span>
+              
+              {/* Name and Department */}
+              <div className="space-y-1 overflow-hidden">
+                <h2 className="font-display text-base font-black text-ink tracking-tight leading-tight line-clamp-1">
+                  {member.full_name}
+                </h2>
+                <span className="text-4xs font-bold uppercase tracking-wider text-ink/50 block line-clamp-1">
+                  {member.department}
+                </span>
+                <span className="text-5xs font-semibold text-ink/40 block">
+                  Batch of {member.batch_year}
+                </span>
+              </div>
             </div>
 
-            {/* Footer details */}
-            <div className="border-t border-mist/30 pt-4 flex justify-between items-end z-10">
+            {/* Details Section */}
+            <div className="z-10 bg-white/40 border border-mist/40 rounded-2xl p-4.5 space-y-2 text-4xs font-semibold text-ink/75">
+              <div className="flex items-center gap-2">
+                <Hash className="h-3.5 w-3.5 text-wisteria/70" />
+                <span>Roll: {member.university_roll}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-wisteria/70" />
+                <span className="truncate">{member.email}</span>
+              </div>
+              {member.phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3.5 w-3.5 text-wisteria/70" />
+                  <span>{member.phone}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-mist/50 pt-3.5 flex justify-between items-center z-10">
               <div className="flex flex-col">
-                <span className="text-4xs font-bold uppercase tracking-wider text-ink/40">Member ID</span>
-                <span className="font-mono text-sm font-bold text-wisteria mt-0.5 tracking-wide">
+                <span className="text-5xs font-bold uppercase tracking-wider text-ink/40">CODATOR ID</span>
+                <span className="font-mono text-xs font-bold text-wisteria mt-0.5 tracking-wider">
                   {member.codator_id}
                 </span>
               </div>
-              <div className="flex flex-col items-end">
-                <span className="text-4xs font-bold uppercase tracking-wider text-ink/40">Batch</span>
-                <span className="text-2xs font-bold text-paper mt-0.5">{member.batch_year}</span>
-              </div>
+
+              {/* Skills badges */}
+              {member.skills && member.skills.length > 0 && (
+                <div className="flex gap-1 overflow-hidden max-w-[120px]">
+                  {member.skills.slice(0, 2).map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded bg-wisteria-tint/40 px-1.5 py-0.5 text-5xs font-semibold text-wisteria border border-wisteria/10 capitalize truncate"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* ================= CARD BACK ================= */}
+          {/* ================= CARD BACK (LIGHT THEME) ================= */}
           <div
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
             }}
-            className="absolute inset-0 w-full h-full bg-[#1C1B29] rounded-3xl p-7 flex flex-col justify-between overflow-hidden border border-wisteria/15"
+            className="absolute inset-0 w-full h-full bg-[#FAFAFC] rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-mist/50"
           >
             {/* Ambient Background Glows */}
-            <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-skyline/20 blur-3xl pointer-events-none" />
+            <div className="absolute -top-32 -right-32 h-64 w-64 rounded-full bg-skyline/10 blur-3xl pointer-events-none" />
 
             {/* Header */}
-            <div className="flex justify-between items-center pb-3 border-b border-mist/20">
+            <div className="flex justify-between items-center pb-3 border-b border-mist/60">
               <div className="flex flex-col">
                 <span className="font-display text-sm font-bold text-wisteria">CODATOR</span>
-                <span className="text-5xs font-bold uppercase tracking-wider text-ink/40">Event Access Pass</span>
+                <span className="text-5xs font-bold uppercase tracking-wider text-ink/45">Event Access Pass</span>
               </div>
-              <span className="rounded bg-wisteria-tint/40 border border-wisteria/10 px-2 py-0.5 text-4xs font-bold uppercase tracking-wider text-wisteria">
-                VERIFIED
+              
+              <span className="rounded-full bg-emerald-50 border border-emerald-100 px-2.5 py-0.5 text-5xs font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-0.5">
+                <CheckCircle className="h-2.5 w-2.5 fill-emerald-100" />
+                Active Pass
               </span>
             </div>
 
             {/* QR Code */}
-            <div className="my-auto flex flex-col items-center gap-3">
-              <div className="bg-paper p-3 rounded-2xl shadow-md border border-mist">
+            <div className="my-auto flex flex-col items-center gap-2">
+              <div className="bg-white p-3 rounded-2xl shadow-sm border border-mist/50">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrCodeUrl} alt="Pass QR Code" className="h-36 w-36 object-contain" />
               </div>
-              <span className="text-5xs text-ink/40 font-semibold tracking-wider uppercase">
+              <span className="text-5xs text-ink/40 font-bold tracking-widest uppercase">
                 Scan at Event Check-in
               </span>
             </div>
 
-            {/* Usage guidelines */}
-            <div className="text-4xs text-ink/55 leading-relaxed space-y-1 bg-paper/20 border border-mist/35 p-3 rounded-xl">
-              <p className="font-semibold text-wisteria">Pass Rules:</p>
-              <p>1. Present this QR code at society events for attendance registration.</p>
-              <p>2. Access is non-transferable and tied to your student account.</p>
+            {/* Rules */}
+            <div className="text-5xs text-ink/65 leading-relaxed space-y-1 bg-white border border-mist/50 p-3 rounded-xl">
+              <p className="font-bold text-wisteria">Pass Rules:</p>
+              <p>1. Present this QR code at event entrances for attendance validation.</p>
+              <p>2. Access is non-transferable and linked directly to your student ID.</p>
             </div>
           </div>
         </motion.div>

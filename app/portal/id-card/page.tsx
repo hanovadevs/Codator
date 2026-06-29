@@ -12,10 +12,10 @@ export default async function PortalIdCardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. Fetch member profile
+  // 2. Fetch member profile with all details for the card
   const { data: member } = await supabase
     .from("members")
-    .select("id, full_name, codator_id, department, batch_year, pass_token")
+    .select("id, full_name, codator_id, department, batch_year, pass_token, university_roll, email, phone, role, skills")
     .or(`user_id.eq.${user?.id},email.eq.${user?.email}`)
     .single();
 
@@ -36,9 +36,15 @@ export default async function PortalIdCardPage() {
     },
   });
 
+  // Cast nulls to empty arrays/objects to prevent TypeScript warnings
+  const formattedMember = {
+    ...member,
+    skills: member.skills || [],
+  };
+
   return (
     <div className="flex justify-center py-4">
-      <IdCardClient member={member} qrCodeUrl={qrCodeUrl} />
+      <IdCardClient member={formattedMember} qrCodeUrl={qrCodeUrl} />
     </div>
   );
 }
