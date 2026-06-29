@@ -10,28 +10,28 @@ const activities = [
   {
     icon: Terminal,
     title: "Hackathons & Sprints",
-    description: "Collaborative, high-energy building sessions where students team up to build software solutions for real-world challenges.",
+    description: "Collaborative building sessions where students team up to build software for real-world challenges.",
     gradient: "from-wisteria-tint to-skyline-tint/30",
     iconColor: "text-wisteria",
   },
   {
     icon: Cpu,
     title: "Systems & Core Tech",
-    description: "Deep dives into operating systems, compilers, computer networks, and systems-level programming in Rust, C, and Go.",
+    description: "Deep dives into operating systems, compilers, networks, and systems programming in Rust, C, and Go.",
     gradient: "from-skyline-tint to-wisteria-tint/30",
     iconColor: "text-skyline",
   },
   {
     icon: Globe,
     title: "Open Source Projects",
-    description: "Building and maintaining the society's internal platforms, open-source libraries, and collaborative university tools.",
+    description: "Building and maintaining the society's internal platforms, libraries, and university tools.",
     gradient: "from-wisteria-tint/40 to-paper",
     iconColor: "text-wisteria",
   },
   {
     icon: Users,
     title: "Peer Mentorship",
-    description: "Bridging the gap between semesters. Seniors guide juniors through course selections, interview prep, and project reviews.",
+    description: "Bridging semesters. Seniors guide juniors through course selections, interview prep, and project reviews.",
     gradient: "from-skyline-tint/40 to-paper",
     iconColor: "text-skyline",
   },
@@ -40,32 +40,40 @@ const activities = [
 const phyla = [
   {
     name: "Tech and Devolpment",
+    slug: "tech-and-development",
     description: "The core engineering hub. We build the society's internal software, open-source projects, and systems-level platforms.",
-    roles: "Director, Head, Co-head, Member",
+    roles: "Devs / Architects",
+    imageSrc: "/tech_phylum.png",
     accent: "from-purple-500/10 to-wisteria-tint/20 border-wisteria/25",
     textColor: "text-wisteria",
     tag: "Code & Infrastructure",
   },
   {
     name: "Media Phylum",
+    slug: "media-phylum",
     description: "Creative design and public branding. We manage the visual aesthetics, graphic assets, social media presence, and UI designs.",
-    roles: "Director, Head, Co-head, Member",
+    roles: "Designers / Creators",
+    imageSrc: "/media_phylum.png",
     accent: "from-blue-500/10 to-skyline-tint/20 border-skyline/25",
     textColor: "text-skyline",
     tag: "Design & Branding",
   },
   {
     name: "Research Phylum",
+    slug: "research-phylum",
     description: "Deep technical exploration. We publish papers, run machine learning workshops, and analyze cutting-edge AI technologies.",
-    roles: "Director, Head, Co-head, Member",
+    roles: "ML Devs / Researchers",
+    imageSrc: "/research_phylum.png",
     accent: "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20",
     textColor: "text-emerald-600",
     tag: "AI & CS Research",
   },
   {
     name: "Event management",
+    slug: "event-management",
     description: "Operations and community networking. We plan, organize, and execute hackathons, tech workshops, and guest lectures.",
-    roles: "Director, Head, Co-head, Member",
+    roles: "Leads / Organizers",
+    imageSrc: "/event_phylum.png",
     accent: "from-amber-500/10 to-amber-500/5 border-amber-500/20",
     textColor: "text-amber-600",
     tag: "Operations & Logistics",
@@ -143,7 +151,6 @@ export default function HomePage() {
         {/* Constellation Canvas Background */}
         <ConstellationReveal />
 
-
         <div className="relative mx-auto max-w-5xl text-center z-10 py-20">
           <motion.div
             variants={containerVars}
@@ -202,7 +209,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. WHAT WE DO SECTION */}
+      {/* 2. WHAT WE DO SECTION (With Image Integration) */}
       <section className="py-24 sm:py-32 bg-paper/30 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center mb-20">
@@ -225,40 +232,66 @@ export default function HomePage() {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {activities.map((act, idx) => {
-              const Icon = act.icon;
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  className={`group relative overflow-hidden rounded-2xl border border-mist bg-gradient-to-br ${act.gradient} p-8 shadow-sm transition-all hover:shadow-md hover:border-wisteria/20`}
-                >
-                  <div className="flex items-start gap-5">
-                    <div className={`rounded-xl bg-paper p-3 shadow-sm ${act.iconColor} border border-mist group-hover:border-wisteria/30 transition-colors`}>
-                      <Icon className="h-6 w-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Column: Activities */}
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {activities.map((act, idx) => {
+                const Icon = act.icon;
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    className={`group relative overflow-hidden rounded-2xl border border-mist bg-gradient-to-br ${act.gradient} p-6 shadow-xs transition-all hover:shadow-md hover:border-wisteria/20`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`rounded-xl bg-paper p-2.5 shadow-xs ${act.iconColor} border border-mist group-hover:border-wisteria/30 transition-colors`}>
+                        <Icon className="h-5.5 w-5.5" />
+                      </div>
+                      <div>
+                        <h3 className="font-display text-base font-bold text-ink mb-1.5">
+                          {act.title}
+                        </h3>
+                        <p className="text-xs leading-relaxed text-ink/70">
+                          {act.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-display text-xl font-bold text-ink mb-2">
-                        {act.title}
-                      </h3>
-                      <p className="text-sm leading-relaxed text-ink/70">
-                        {act.description}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Right Column: Premium Illustration */}
+            <div className="lg:col-span-5 flex justify-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6 }}
+                className="relative w-full max-w-[380px] aspect-square rounded-3xl overflow-hidden border border-mist/80 bg-white/60 p-6 shadow-lg hover:shadow-xl transition-all duration-300 group"
+              >
+                {/* Soft backdrop glow behind image */}
+                <div className="absolute inset-0 bg-gradient-to-br from-wisteria-tint/20 via-skyline-tint/10 to-transparent z-0" />
+                <div className="relative w-full h-full z-10 transition-transform duration-500 group-hover:scale-[1.02]">
+                  <Image
+                    src="/collaboration_bg.png"
+                    alt="CODATOR Member Collaboration"
+                    fill
+                    sizes="380px"
+                    className="object-contain"
+                  />
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 3. OUR CORE PHYLA SECTION */}
+      {/* 3. OUR CORE PHYLA SECTION (With Image & Page Links) */}
       <section className="py-24 sm:py-32 bg-paper relative overflow-hidden border-t border-mist/40">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center mb-20">
@@ -299,26 +332,42 @@ export default function HomePage() {
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.6, delay: idx * 0.15 }}
                 whileHover={{ y: -6, transition: { duration: 0.25 } }}
-                className={`group relative overflow-hidden rounded-3xl border bg-gradient-to-br ${phylum.accent} p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[250px]`}
+                className={`group relative overflow-hidden rounded-3xl border bg-gradient-to-br ${phylum.accent} p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[260px]`}
               >
                 <div className="space-y-4">
-                  <div className="flex justify-between items-start">
-                    <span className={`text-5xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-md bg-paper border ${phylum.textColor} border-mist/80 shadow-3xs`}>
-                      {phylum.tag}
-                    </span>
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="space-y-2">
+                      <span className={`inline-flex text-5xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-md bg-paper border ${phylum.textColor} border-mist/80 shadow-3xs`}>
+                        {phylum.tag}
+                      </span>
+                      <h3 className="font-display text-2xl font-black text-ink group-hover:text-wisteria transition-colors">
+                        {phylum.name}
+                      </h3>
+                    </div>
+                    {/* Tiny Illustration Card */}
+                    <div className="relative h-14 w-14 shrink-0 rounded-2xl border border-mist/40 bg-white/60 p-2.5 shadow-3xs group-hover:scale-105 transition-transform duration-300">
+                      <Image
+                        src={phylum.imageSrc}
+                        alt={phylum.name}
+                        fill
+                        sizes="56px"
+                        className="object-contain"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-display text-2xl font-black text-ink group-hover:text-wisteria transition-colors">
-                      {phylum.name}
-                    </h3>
-                    <p className="mt-3 text-sm leading-relaxed text-ink/70 font-semibold">
-                      {phylum.description}
-                    </p>
-                  </div>
+                  <p className="text-xs leading-relaxed text-ink/70 font-semibold max-w-md">
+                    {phylum.description}
+                  </p>
                 </div>
                 <div className="border-t border-mist/40 pt-4 mt-6 flex justify-between items-center text-4xs font-bold text-ink/50 uppercase tracking-wider">
-                  <span>Available Roles:</span>
                   <span className={phylum.textColor}>{phylum.roles}</span>
+                  <Link
+                    href={`/phylum/${phylum.slug}`}
+                    className="inline-flex items-center gap-1 text-5xs font-black text-wisteria hover:underline group/btn"
+                  >
+                    <span>Learn More</span>
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover/btn:translate-x-0.5" />
+                  </Link>
                 </div>
               </motion.div>
             ))}

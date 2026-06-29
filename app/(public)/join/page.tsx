@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight, User, Hash, GraduationCap, Mail, Phone, Code, Check } from "lucide-react";
 
-const departments = [
-  "Computer Science",
-  "Computer Engineering",
-  "Software Engineering",
-  "Information Technology",
-  "Data Science & AI",
+const PHYLA_OPTIONS = [
+  "Tech and Devolpment",
+  "Media Phylum",
+  "Research Phylum",
+  "Event management",
 ];
 
 const availableSkills = [
@@ -24,26 +24,52 @@ const availableSkills = [
 ];
 
 export default function JoinPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-paper flex items-center justify-center text-xs font-bold text-ink/50">
+        Loading Application Form...
+      </div>
+    }>
+      <JoinFormContent />
+    </Suspense>
+  );
+}
+
+function JoinFormContent() {
+  const searchParams = useSearchParams();
+  const initialPhylum = searchParams.get("phylum") || "";
+
   const [formData, setFormData] = useState({
     fullName: "",
     rollNumber: "",
-    department: "",
+    department: "", // Set in useEffect on mount to ensure searchParams are read
     batchYear: "",
     email: "",
     phone: "",
     whyJoin: "",
   });
+
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [emailError, setEmailError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Set the preselected phylum once on mount
+  useEffect(() => {
+    if (initialPhylum) {
+      // Match exactly or decode
+      const decoded = decodeURIComponent(initialPhylum);
+      if (PHYLA_OPTIONS.includes(decoded)) {
+        setFormData((prev) => ({ ...prev, department: decoded }));
+      }
+    }
+  }, [initialPhylum]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
-    // Clear email error when user typing
     if (name === "email") {
       setEmailError("");
     }
@@ -58,15 +84,11 @@ export default function JoinPage() {
   };
 
   const validateEmail = (email: string) => {
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return "Please enter a valid email address.";
     }
 
-    // University domain validation (as per security notes: checking for .edu or similar)
-    // We will show a warning if it doesn't end with .edu, but allow it if needed,
-    // or restrict it. Let's enforce that it must be a university email (.edu).
     if (!email.toLowerCase().endsWith(".edu") && !email.toLowerCase().includes(".edu.")) {
       return "Please use your official university email (ending in .edu).";
     }
@@ -78,7 +100,6 @@ export default function JoinPage() {
     e.preventDefault();
     setSubmitError("");
     
-    // Validate email
     const error = validateEmail(formData.email);
     if (error) {
       setEmailError(error);
@@ -98,7 +119,7 @@ export default function JoinPage() {
         body: JSON.stringify({
           fullName: formData.fullName,
           rollNumber: formData.rollNumber,
-          department: formData.department,
+          department: formData.department, // This is the Phylum in the database
           batchYear: formData.batchYear,
           email: formData.email,
           phone: formData.phone,
@@ -126,15 +147,15 @@ export default function JoinPage() {
     <div className="py-20 sm:py-28 bg-paper">
       <title>Join CODATOR | Apply for Membership</title>
       <meta name="description" content="Apply for CODATOR membership. Get your unique student ID, digital member card, and virtual event pass." />
+      
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
             Join CODATOR
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-ink/75 max-w-xl mx-auto">
-            Apply for membership today. Once reviewed and approved by our committee, you will receive your unique CODATOR ID and virtual pass.
+          <p className="mt-4 text-sm sm:text-base text-ink/75 max-w-xl mx-auto font-semibold">
+            Apply for membership today. Once approved by our committee, you will receive your unique CODATOR ID and virtual pass.
           </p>
         </div>
 
@@ -157,7 +178,7 @@ export default function JoinPage() {
               </div>
 
               <h2 className="font-display text-2xl font-bold text-ink">Application Submitted!</h2>
-              <p className="mt-4 text-base text-ink/75 max-w-md mx-auto">
+              <p className="mt-4 text-xs sm:text-sm text-ink/75 max-w-md mx-auto font-semibold">
                 Thank you for applying to CODATOR. Our team will review your details and send a confirmation email with your membership credentials shortly.
               </p>
               <div className="mt-8 border-t border-mist/60 pt-6 text-xs text-ink/50">
@@ -185,7 +206,7 @@ export default function JoinPage() {
                       required
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors"
+                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors font-semibold"
                       placeholder="Alice Smith"
                     />
                   </div>
@@ -203,7 +224,7 @@ export default function JoinPage() {
                       required
                       value={formData.rollNumber}
                       onChange={handleInputChange}
-                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors"
+                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors font-semibold"
                       placeholder="2024-CS-104"
                     />
                   </div>
@@ -213,14 +234,14 @@ export default function JoinPage() {
               {/* Section 2: Academic Info */}
               <div>
                 <h3 className="font-display text-lg font-bold text-ink border-b border-mist pb-2 mb-6">
-                  Academic Details
+                  Academic & Phylum Details
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Department */}
+                  {/* Phylum (Department) */}
                   <div>
                     <label htmlFor="department" className="flex items-center gap-1.5 text-sm font-medium text-ink/85 mb-1.5">
                       <GraduationCap className="h-4 w-4 text-ink/40" />
-                      Department
+                      Target Phylum (Department)
                     </label>
                     <select
                       name="department"
@@ -228,12 +249,12 @@ export default function JoinPage() {
                       required
                       value={formData.department}
                       onChange={handleInputChange}
-                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors"
+                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors font-semibold"
                     >
-                      <option value="">Select Department</option>
-                      {departments.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
+                      <option value="">Select Phylum</option>
+                      {PHYLA_OPTIONS.map((phylum) => (
+                        <option key={phylum} value={phylum}>
+                          {phylum}
                         </option>
                       ))}
                     </select>
@@ -252,8 +273,8 @@ export default function JoinPage() {
                       required
                       value={formData.batchYear}
                       onChange={handleInputChange}
-                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors"
-                      placeholder="2024 - 2028 (or 4th Semester)"
+                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors font-semibold"
+                      placeholder="e.g. 2028 or 4th Semester"
                     />
                   </div>
                 </div>
@@ -278,7 +299,7 @@ export default function JoinPage() {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className={`block w-full rounded-lg border bg-paper px-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-1 transition-colors ${
+                      className={`block w-full rounded-lg border bg-paper px-4 py-2.5 text-sm text-ink focus:outline-none focus:ring-1 transition-colors font-semibold ${
                         emailError
                           ? "border-ember focus:border-ember focus:ring-ember"
                           : "border-mist focus:border-wisteria focus:ring-wisteria"
@@ -304,7 +325,7 @@ export default function JoinPage() {
                       id="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors"
+                      className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors font-semibold"
                       placeholder="+1 (555) 019-2834"
                     />
                   </div>
@@ -348,7 +369,7 @@ export default function JoinPage() {
                 {/* Why Join */}
                 <div>
                   <label htmlFor="whyJoin" className="block text-sm font-medium text-ink/85 mb-1.5">
-                    Why do you want to join CODATOR?
+                    Why do you want to join this Phylum in CODATOR?
                   </label>
                   <textarea
                     name="whyJoin"
@@ -357,8 +378,8 @@ export default function JoinPage() {
                     rows={4}
                     value={formData.whyJoin}
                     onChange={handleInputChange}
-                    className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors resize-none"
-                    placeholder="Tell us about your technical goals, projects you want to build, or what you hope to learn from the society."
+                    className="block w-full rounded-lg border border-mist bg-paper px-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors resize-none font-semibold"
+                    placeholder="Tell us about your technical goals, projects you want to build, or why you selected this specific Phylum."
                   />
                 </div>
               </div>
@@ -368,7 +389,7 @@ export default function JoinPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full inline-flex items-center justify-center rounded-lg bg-wisteria px-6 py-3.5 text-base font-semibold text-paper shadow-sm hover:bg-wisteria/90 active:scale-[0.99] transition-all disabled:opacity-50"
+                  className="w-full inline-flex items-center justify-center rounded-lg bg-wisteria px-6 py-3.5 text-base font-semibold text-paper shadow-sm hover:bg-wisteria/90 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <span>Submitting Application...</span>
