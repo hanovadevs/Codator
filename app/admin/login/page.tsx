@@ -45,12 +45,13 @@ export default function AdminLoginPage() {
         <div className="flex justify-center">
           <div className="relative h-16 w-16">
             <Image
-              src="/logo_removedbg.png"
+              src="/without%20text_logo.png"
               alt="CODATOR Logo"
               fill
               className="object-contain"
               priority
             />
+
           </div>
         </div>
         <h2 className="mt-6 text-center font-display text-3xl font-extrabold tracking-tight text-ink">

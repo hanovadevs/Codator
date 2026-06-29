@@ -13,7 +13,7 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-2.5">
               <div className="relative h-8 w-8 overflow-hidden">
                 <Image
-                  src="/logo_removedbg.png"
+                  src="/without%20text_logo.png"
                   alt="CODATOR Logo"
                   fill
                   sizes="32px"

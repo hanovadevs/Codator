@@ -30,7 +30,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center gap-2.5 group">
               <div className="relative h-9 w-9 overflow-hidden transition-transform duration-300 group-hover:scale-105">
                 <Image
-                  src="/logo_removedbg.png"
+                  src="/without%20text_logo.png"
                   alt="CODATOR Logo"
                   fill
                   sizes="36px"
