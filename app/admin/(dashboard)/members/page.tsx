@@ -1,12 +1,22 @@
-export default function AdminMembersPage() {
-  return (
-    <div>
-      <h1 className="font-display text-3xl font-bold tracking-tight text-ink mb-2">Members Management</h1>
-      <p className="text-ink/70 mb-8">Search, filter, and manage all registered members of CODATOR.</p>
-      
-      <div className="border border-dashed border-mist rounded-xl p-12 text-center text-ink/50">
-        <p>No members registered yet.</p>
-      </div>
-    </div>
-  );
+import { createClient } from "@/lib/supabase/server";
+import MembersClient from "@/components/admin/members-client";
+
+export const revalidate = 0; // Dynamic members list
+
+export default async function AdminMembersPage() {
+  const supabase = await createClient();
+
+  // Fetch all members from the database
+  const { data: members, error } = await supabase
+    .from("members")
+    .select(
+      "id, full_name, university_roll, department, batch_year, email, phone, why_join, skills, status, codator_id, role, applied_at, approved_at"
+    )
+    .order("applied_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching members:", error);
+  }
+
+  return <MembersClient initialMembers={members || []} />;
 }
