@@ -42,8 +42,10 @@ export default function Navbar() {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-mist bg-paper/85 backdrop-blur-md transition-all">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <nav className="border border-mist/80 bg-white/75 backdrop-blur-md shadow-md transition-all py-1 rounded-2xl">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
+
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
@@ -145,8 +147,9 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden border-b border-mist bg-paper"
+            className="md:hidden border-t border-mist/50 bg-white/40 rounded-b-2xl overflow-hidden"
           >
+
             <div className="space-y-1 px-4 py-4 pb-6">
               {navLinks.map((link) => {
                 const isActive = pathname === link.href;
@@ -199,7 +202,9 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+      </nav>
+    </div>
   );
 }
+
 

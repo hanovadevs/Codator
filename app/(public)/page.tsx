@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin } from "lucide-react";
+import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin, Award } from "lucide-react";
 import ConstellationReveal from "@/components/hero/constellation-reveal";
 
 const activities = [
@@ -33,6 +34,41 @@ const activities = [
     description: "Bridging the gap between semesters. Seniors guide juniors through course selections, interview prep, and project reviews.",
     gradient: "from-skyline-tint/40 to-paper",
     iconColor: "text-skyline",
+  },
+];
+
+const phyla = [
+  {
+    name: "Tech and Devolpment",
+    description: "The core engineering hub. We build the society's internal software, open-source projects, and systems-level platforms.",
+    roles: "Director, Head, Co-head, Member",
+    accent: "from-purple-500/10 to-wisteria-tint/20 border-wisteria/25",
+    textColor: "text-wisteria",
+    tag: "Code & Infrastructure",
+  },
+  {
+    name: "Media Phylum",
+    description: "Creative design and public branding. We manage the visual aesthetics, graphic assets, social media presence, and UI designs.",
+    roles: "Director, Head, Co-head, Member",
+    accent: "from-blue-500/10 to-skyline-tint/20 border-skyline/25",
+    textColor: "text-skyline",
+    tag: "Design & Branding",
+  },
+  {
+    name: "Research Phylum",
+    description: "Deep technical exploration. We publish papers, run machine learning workshops, and analyze cutting-edge AI technologies.",
+    roles: "Director, Head, Co-head, Member",
+    accent: "from-emerald-500/10 to-emerald-500/5 border-emerald-500/20",
+    textColor: "text-emerald-600",
+    tag: "AI & CS Research",
+  },
+  {
+    name: "Event management",
+    description: "Operations and community networking. We plan, organize, and execute hackathons, tech workshops, and guest lectures.",
+    roles: "Director, Head, Co-head, Member",
+    accent: "from-amber-500/10 to-amber-500/5 border-amber-500/20",
+    textColor: "text-amber-600",
+    tag: "Operations & Logistics",
   },
 ];
 
@@ -87,14 +123,25 @@ export default function HomePage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
   };
 
-
   return (
     <div className="relative w-full">
       <title>CODATOR | Computer Science & Engineering Society</title>
       <meta name="description" content="Welcome to CODATOR, the university Computer Science & Computer Engineering society. We build systems, hackathons, and workshops for tomorrow." />
 
       {/* 1. HERO SECTION */}
-      <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden border-b border-mist px-4 sm:px-6 lg:px-8">
+      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden border-b border-mist px-4 sm:px-6 lg:px-8">
+        {/* Hero Background Image */}
+        <div className="absolute inset-0 z-0 select-none pointer-events-none">
+          <Image
+            src="/hero_bg.png"
+            alt="CODATOR Premium Tech Background"
+            fill
+            priority
+            className="object-cover opacity-25"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-paper/50 to-paper" />
+        </div>
+
         {/* Constellation Canvas Background */}
         <ConstellationReveal />
 
@@ -160,12 +207,23 @@ export default function HomePage() {
       <section className="py-24 sm:py-32 bg-paper/30 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center mb-20">
-            <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+            <motion.h2
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+            >
               Engineered for Growth
-            </h2>
-            <p className="mt-4 text-lg text-ink/60">
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="mt-4 text-lg text-ink/60"
+            >
               We focus on building practical skills, collaborating on code, and helping members launch impactful projects.
-            </p>
+            </motion.p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -201,17 +259,96 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. UPCOMING EVENTS STRIP */}
-      <section className="py-24 sm:py-32 border-t border-b border-mist bg-paper relative">
+      {/* 3. OUR CORE PHYLA SECTION */}
+      <section className="py-24 sm:py-32 bg-paper relative overflow-hidden border-t border-mist/40">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center mb-20">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-wisteria/25 bg-wisteria-tint px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-wisteria mb-4"
+            >
+              Society Structure
+            </motion.span>
+            <motion.h2
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+            >
+              Our Core Phyla
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="mt-4 text-lg text-ink/60"
+            >
+              Every active member belongs to one of our four specialized departments, leading initiatives and collaborating on domain-specific challenges.
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {phyla.map((phylum, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6, delay: idx * 0.15 }}
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                className={`group relative overflow-hidden rounded-3xl border bg-gradient-to-br ${phylum.accent} p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between min-h-[250px]`}
+              >
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <span className={`text-5xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-md bg-paper border ${phylum.textColor} border-mist/80 shadow-3xs`}>
+                      {phylum.tag}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-display text-2xl font-black text-ink group-hover:text-wisteria transition-colors">
+                      {phylum.name}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-ink/70 font-semibold">
+                      {phylum.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="border-t border-mist/40 pt-4 mt-6 flex justify-between items-center text-4xs font-bold text-ink/50 uppercase tracking-wider">
+                  <span>Available Roles:</span>
+                  <span className={phylum.textColor}>{phylum.roles}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. UPCOMING EVENTS STRIP */}
+      <section className="py-24 sm:py-32 border-t border-b border-mist bg-paper/30 relative">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
             <div>
-              <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+              <motion.h2
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+              >
                 Upcoming Events
-              </h2>
-              <p className="mt-3 text-lg text-ink/60">
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="mt-3 text-lg text-ink/60"
+              >
                 Join our workshops, hackathons, and seminars. Open to all students.
-              </p>
+              </motion.p>
             </div>
             <Link
               href="/events"
@@ -258,7 +395,7 @@ export default function HomePage() {
                 
                 <div className="mt-6 border-t border-mist/60 pt-4">
                   <Link
-                    href={`/events/mock-event-${idx}`}
+                    href={`/events`}
                     className="inline-flex w-full items-center justify-center rounded-lg bg-wisteria-tint/75 py-2 text-xs font-semibold text-wisteria hover:bg-wisteria hover:text-paper transition-colors"
                   >
                     Details & Register
@@ -270,16 +407,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. MEMBERSHIP CTA BAND */}
+      {/* 5. MEMBERSHIP CTA BAND */}
       <section className="py-24 bg-gradient-to-b from-paper to-wisteria-tint/25 relative overflow-hidden">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl max-w-2xl mx-auto">
+          <motion.h2
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl max-w-2xl mx-auto"
+          >
             Ready to Build the Systems of Tomorrow?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base sm:text-lg text-ink/70">
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="mx-auto mt-4 max-w-xl text-base sm:text-lg text-ink/70"
+          >
             Submit your application today. Once approved, you&apos;ll receive your official CODATOR ID and virtual member pass.
-          </p>
-          <div className="mt-10">
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="mt-10"
+          >
             <Link
               href="/join"
               className="inline-flex items-center justify-center rounded-lg bg-wisteria px-8 py-4 text-base font-semibold text-paper shadow-md hover:bg-wisteria/90 active:scale-[0.98] transition-all group"
@@ -287,7 +441,7 @@ export default function HomePage() {
               Apply for Membership
               <ArrowRight className="ml-2 h-4.5 w-4.5 transition-transform group-hover:translate-x-1" />
             </Link>
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>
