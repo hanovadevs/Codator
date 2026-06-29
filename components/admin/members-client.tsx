@@ -577,14 +577,20 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                   </div>
 
                   <div>
-                    <label className="block text-ink/75 mb-1">Phylum (Department) *</label>
+                    <label className="block text-ink/75 mb-1">
+                      Phylum (Department) {["Director", "Head", "Co-Head", "Member"].includes(addForm.position) ? "*" : "(Optional)"}
+                    </label>
                     <select
-                      required
+                      required={["Director", "Head", "Co-Head", "Member"].includes(addForm.position)}
                       value={addForm.department}
                       onChange={(e) => setAddForm({ ...addForm, department: e.target.value })}
                       className="w-full px-3 py-2 bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria font-semibold"
                     >
-                      <option value="">Select Phylum</option>
+                      <option value="">
+                        {["Director", "Head", "Co-Head", "Member"].includes(addForm.position) 
+                          ? "Select Phylum" 
+                          : "None (Standalone)"}
+                      </option>
                       {DEPARTMENT_OPTIONS.map((dept) => (
                         <option key={dept} value={dept}>
                           {dept}
@@ -592,6 +598,7 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                       ))}
                     </select>
                   </div>
+
 
 
                   <div>
@@ -759,12 +766,16 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-ink/75 mb-1">Phylum (Department)</label>
+                        <label className="block text-ink/75 mb-1">
+                          Phylum (Department) {["Director", "Head", "Co-Head", "Member"].includes(editForm.position) ? "*" : "(Optional)"}
+                        </label>
                         <select
+                          required={["Director", "Head", "Co-Head", "Member"].includes(editForm.position)}
                           value={editForm.department}
                           onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
                           className="w-full px-3 py-2 bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria font-semibold"
                         >
+                          <option value="">None (Standalone)</option>
                           {DEPARTMENT_OPTIONS.map((dept) => (
                             <option key={dept} value={dept}>
                               {dept}
@@ -772,6 +783,7 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                           ))}
                         </select>
                       </div>
+
 
                       <div>
                         <label className="block text-ink/75 mb-1">Batch Year</label>
