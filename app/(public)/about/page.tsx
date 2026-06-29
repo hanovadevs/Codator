@@ -56,8 +56,10 @@ const pillars = [
 
 export default function AboutPage() {
   return (
-    <div className="py-20 sm:py-28 bg-paper">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-paper pt-28 pb-20 text-ink">
+      <title>About CODATOR | Society Pillars & History</title>
+      <meta name="description" content="Learn about the CODATOR computer science and engineering society, our core pillars, and our history." />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="max-w-3xl mb-20">
           <motion.h1

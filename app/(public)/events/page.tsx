@@ -2,6 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Calendar, MapPin, ArrowRight, Image as ImageIcon } from "lucide-react";
 
+export const metadata = {
+  title: "Society Events | CODATOR",
+  description: "Browse and register for upcoming CODATOR hackathons, workshops, guest lectures, and networking sessions.",
+};
+
+
 export const revalidate = 60; // Cache for 60 seconds
 
 export default async function PublicEventsPage() {

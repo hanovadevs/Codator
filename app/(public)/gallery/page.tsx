@@ -120,7 +120,10 @@ export default function GalleryPage() {
 
   return (
     <div className="py-20 sm:py-28 bg-paper">
+      <title>Society Gallery | CODATOR</title>
+      <meta name="description" content="View photos and projects from CODATOR workshops, hackathons, and community gatherings." />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div className="max-w-3xl mb-16">
           <h1 className="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">

@@ -94,7 +94,10 @@ const teamMembers = [
 export default function TeamPage() {
   return (
     <div className="py-20 sm:py-28 bg-paper">
+      <title>Meet the Team | CODATOR</title>
+      <meta name="description" content="Meet the student committee, developers, and designers leading the CODATOR Computer Science & Engineering society." />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div className="max-w-3xl mb-20">
           <motion.h1

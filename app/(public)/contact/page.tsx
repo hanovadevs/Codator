@@ -32,7 +32,10 @@ export default function ContactPage() {
 
   return (
     <div className="py-20 sm:py-28 bg-paper">
+      <title>Contact Us | CODATOR</title>
+      <meta name="description" content="Get in touch with the CODATOR society. Send us your queries, feedback, or collaboration proposals." />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div className="max-w-3xl mb-16">
           <h1 className="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">

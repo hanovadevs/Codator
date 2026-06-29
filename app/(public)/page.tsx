@@ -90,6 +90,9 @@ export default function HomePage() {
 
   return (
     <div className="relative w-full">
+      <title>CODATOR | Computer Science & Engineering Society</title>
+      <meta name="description" content="Welcome to CODATOR, the university Computer Science & Computer Engineering society. We build systems, hackathons, and workshops for tomorrow." />
+
       {/* 1. HERO SECTION */}
       <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden border-b border-mist px-4 sm:px-6 lg:px-8">
         {/* Constellation Canvas Background */}

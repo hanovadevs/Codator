@@ -10,6 +10,23 @@ interface EventDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export async function generateMetadata({ params }: EventDetailPageProps) {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: event } = await supabase
+    .from("events")
+    .select("title, description")
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  return {
+    title: event ? `${event.title} | CODATOR Events` : "Event Details | CODATOR",
+    description: event ? event.description.slice(0, 160) : "Learn about and register for CODATOR events.",
+  };
+}
+
+
 export default async function PublicEventDetailPage({ params }: EventDetailPageProps) {
   const { slug } = await params;
   const supabase = await createClient();
