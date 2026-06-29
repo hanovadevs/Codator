@@ -129,21 +129,20 @@ export default function HomePage() {
       <meta name="description" content="Welcome to CODATOR, the university Computer Science & Computer Engineering society. We build systems, hackathons, and workshops for tomorrow." />
 
       {/* 1. HERO SECTION */}
-      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden border-b border-mist px-4 sm:px-6 lg:px-8">
-        {/* Hero Background Image */}
-        <div className="absolute inset-0 z-0 select-none pointer-events-none">
-          <Image
-            src="/hero_bg.png"
-            alt="CODATOR Premium Tech Background"
-            fill
-            priority
-            className="object-cover opacity-25"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-paper/50 to-paper" />
+      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden border-b border-mist px-4 sm:px-6 lg:px-8 bg-paper">
+        {/* Soft, Premium Glowing Orbs (CSS-based, no clutter) */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+          {/* Purple Orb */}
+          <div className="absolute -top-[20%] left-[5%] w-[50vw] h-[50vw] rounded-full bg-wisteria/10 blur-[130px] animate-pulse" style={{ animationDuration: "10s" }} />
+          {/* Blue/Teal Orb */}
+          <div className="absolute -bottom-[20%] right-[5%] w-[50vw] h-[50vw] rounded-full bg-skyline/10 blur-[130px] animate-pulse" style={{ animationDuration: "14s" }} />
+          {/* Soft Gold Highlight */}
+          <div className="absolute top-[25%] right-[15%] w-[35vw] h-[35vw] rounded-full bg-amber-100/10 blur-[110px]" />
         </div>
 
         {/* Constellation Canvas Background */}
         <ConstellationReveal />
+
 
         <div className="relative mx-auto max-w-5xl text-center z-10 py-20">
           <motion.div

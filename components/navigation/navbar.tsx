@@ -43,8 +43,9 @@ export default function Navbar() {
 
   return (
     <div className="sticky top-4 z-50 w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-      <nav className="border border-mist/80 bg-white/75 backdrop-blur-md shadow-md transition-all py-1 rounded-2xl">
+      <nav className="border border-white/50 bg-white/60 backdrop-blur-xl shadow-sm transition-all py-1 rounded-2xl">
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
+
 
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
