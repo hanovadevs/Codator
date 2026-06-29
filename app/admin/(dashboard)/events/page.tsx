@@ -1,12 +1,26 @@
-export default function AdminEventsPage() {
-  return (
-    <div>
-      <h1 className="font-display text-3xl font-bold tracking-tight text-ink mb-2">Events Management</h1>
-      <p className="text-ink/70 mb-8">Create, edit, and publish events for the CODATOR society.</p>
-      
-      <div className="border border-dashed border-mist rounded-xl p-12 text-center text-ink/50">
-        <p>No events created yet.</p>
+import { createClient } from "@/lib/supabase/server";
+import EventsClient from "@/components/admin/events-client";
+
+export const revalidate = 0; // Always fetch fresh events
+
+export default async function AdminEventsPage() {
+  const supabase = await createClient();
+
+  // Fetch all events sorted by start date
+  const { data: events, error } = await supabase
+    .from("events")
+    .select("*")
+    .order("date_start", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching events:", error);
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800">
+        <h2 className="font-bold">Error</h2>
+        <p className="text-sm mt-1">Failed to load events. Please try again later.</p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <EventsClient initialEvents={events || []} />;
 }
