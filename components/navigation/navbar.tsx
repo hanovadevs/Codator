@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
+import { type User as SupabaseUser } from "@supabase/supabase-js";
 
 const navLinks = [
   { href: "/about", label: "About" },
@@ -17,7 +19,25 @@ const navLinks = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const pathname = usePathname();
+  const supabase = createClient();
+
+  useEffect(() => {
+    // 1. Get initial session
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    // 2. Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -73,18 +93,30 @@ export default function Navbar() {
             <div className="h-4 w-px bg-mist" />
             
             <div className="flex items-center gap-4">
-              <Link
-                href="/portal"
-                className="text-sm font-semibold text-ink/70 hover:text-wisteria transition-colors px-3 py-2"
-              >
-                Portal
-              </Link>
-              <Link
-                href="/join"
-                className="inline-flex items-center justify-center rounded-lg bg-wisteria px-4.5 py-2 text-sm font-semibold text-paper hover:bg-wisteria/90 active:scale-[0.98] transition-all shadow-sm"
-              >
-                Join Us
-              </Link>
+              {user ? (
+                <Link
+                  href="/portal"
+                  className="inline-flex items-center gap-2 rounded-xl border border-wisteria/40 bg-wisteria-tint/20 px-4 py-2 text-xs font-bold text-wisteria hover:bg-wisteria/10 active:scale-[0.98] transition-all shadow-xs"
+                >
+                  <User className="h-4 w-4" />
+                  <span>My Portal</span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/portal"
+                    className="text-sm font-semibold text-ink/70 hover:text-wisteria transition-colors px-3 py-2"
+                  >
+                    Portal
+                  </Link>
+                  <Link
+                    href="/join"
+                    className="inline-flex items-center justify-center rounded-lg bg-wisteria px-4.5 py-2 text-sm font-semibold text-paper hover:bg-wisteria/90 active:scale-[0.98] transition-all shadow-sm"
+                  >
+                    Join Us
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -134,21 +166,34 @@ export default function Navbar() {
                 );
               })}
               <div className="my-4 h-px bg-mist" />
-              <div className="grid grid-cols-2 gap-4">
-                <Link
-                  href="/portal"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center rounded-lg border border-mist px-4 py-2.5 text-base font-semibold text-ink/70 hover:bg-wisteria-tint/50 hover:text-wisteria transition-colors"
-                >
-                  Portal
-                </Link>
-                <Link
-                  href="/join"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center rounded-lg bg-wisteria px-4 py-2.5 text-base font-semibold text-paper hover:bg-wisteria/90 transition-colors"
-                >
-                  Join Us
-                </Link>
+              <div className="flex flex-col gap-3">
+                {user ? (
+                  <Link
+                    href="/portal"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-wisteria py-2.5 text-base font-semibold text-paper hover:bg-wisteria/90 transition-colors shadow-xs"
+                  >
+                    <User className="h-5 w-5" />
+                    <span>My Portal</span>
+                  </Link>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4 w-full">
+                    <Link
+                      href="/portal"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center rounded-lg border border-mist px-4 py-2.5 text-base font-semibold text-ink/70 hover:bg-wisteria-tint/50 hover:text-wisteria transition-colors"
+                    >
+                      Portal
+                    </Link>
+                    <Link
+                      href="/join"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center rounded-lg bg-wisteria px-4 py-2.5 text-base font-semibold text-paper hover:bg-wisteria/90 transition-colors"
+                    >
+                      Join Us
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -157,3 +202,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
