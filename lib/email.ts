@@ -12,7 +12,7 @@ interface EmailMemberPayload {
  * Generates the HTML welcome email template.
  */
 function getWelcomeEmailHtml(member: EmailMemberPayload, siteUrl: string): string {
-  const portalUrl = `${siteUrl}/portal`;
+  const portalUrl = `${siteUrl}/login`;
   const passImageUrl = `${siteUrl}/api/pass/${member.id}`;
 
   return `
@@ -39,65 +39,69 @@ function getWelcomeEmailHtml(member: EmailMemberPayload, siteUrl: string): strin
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .header {
-          background-color: #8B7FE8;
+          background: linear-gradient(135deg, #8B7FE8 0%, #5B8DEF 100%);
           padding: 30px;
           text-align: center;
+          color: #ffffff;
         }
         .header h1 {
-          color: #FAFAFC;
           margin: 0;
-          font-size: 24px;
-          letter-spacing: -0.5px;
+          font-size: 28px;
+          font-weight: 900;
+          letter-spacing: 2px;
         }
         .content {
           padding: 40px 30px;
           line-height: 1.6;
         }
         .content h2 {
+          color: #1C1B29;
           font-size: 20px;
           margin-top: 0;
+          margin-bottom: 20px;
+        }
+        .content p {
+          color: #4B4958;
+          font-size: 14px;
+          margin-bottom: 15px;
         }
         .id-box {
-          background-color: #EDEAFB;
-          border: 1px solid #E8E7F0;
+          background-color: #F4F3F8;
+          border: 1px dashed #D5D3E5;
           border-radius: 8px;
-          padding: 16px;
+          padding: 20px;
           text-align: center;
           margin: 25px 0;
         }
         .id-label {
-          font-size: 12px;
+          font-size: 11px;
+          font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          color: #5B8DEF;
-          font-weight: bold;
-          margin-bottom: 6px;
+          letter-spacing: 1.5px;
+          color: #8B7FE8;
         }
         .id-value {
-          font-family: 'Courier New', Courier, monospace;
-          font-size: 22px;
-          font-weight: bold;
-          color: #8B7FE8;
-          letter-spacing: 1px;
+          font-size: 24px;
+          font-weight: 900;
+          font-family: monospace;
+          color: #1C1B29;
+          margin-top: 5px;
         }
         .btn {
           display: inline-block;
-          background-color: #8B7FE8;
-          color: #FAFAFC !important;
+          background: #8B7FE8;
+          color: #ffffff !important;
           text-decoration: none;
-          padding: 12px 24px;
+          padding: 12px 30px;
           border-radius: 8px;
-          font-weight: bold;
-          margin-top: 15px;
-          text-align: center;
-        }
-        .btn:hover {
-          background-color: #7A6ED7;
+          font-size: 14px;
+          font-weight: 750;
+          margin: 20px 0;
         }
         .footer {
-          background-color: #FAFAFC;
-          padding: 20px 30px;
-          border-t: 1px solid #E8E7F0;
+          background-color: #F9F9FB;
+          padding: 20px;
+          border-top: 1px solid #E8E7F0;
           font-size: 12px;
           color: #1C1B29;
           opacity: 0.5;
@@ -106,31 +110,32 @@ function getWelcomeEmailHtml(member: EmailMemberPayload, siteUrl: string): strin
       </style>
     </head>
     <body>
-      <div className="container">
-        <div className="header">
+      <div class="container">
+        <div class="header">
           <h1>CODATOR</h1>
         </div>
-        <div className="content">
+        <div class="content">
           <h2>Welcome to the Society, ${member.full_name}!</h2>
           <p>We are thrilled to inform you that your application for membership in CODATOR has been approved.</p>
           <p>You are now officially a member of the university Computer Science & Computer Engineering society.</p>
           
-          <div className="id-box">
-            <div className="id-label">Your CODATOR ID</div>
-            <div className="id-value">${member.codator_id}</div>
+          <div class="id-box">
+            <div class="id-label">Your CODATOR ID</div>
+            <div class="id-value">${member.codator_id}</div>
           </div>
           
-          <p>Your digital member card and virtual event pass have been generated. You can download your pass by clicking the button below or view it directly at the link below:</p>
+          <p>Your digital member card and virtual event pass have been generated. To access your portal, please click the button below to activate your account (select the <b>Activate Account</b> tab and choose a password using this email address):</p>
           
           <div style="text-align: center;">
-            <a href="${portalUrl}" className="btn">Go to Member Portal</a>
+            <a href="${portalUrl}" class="btn">Activate Account & Login</a>
           </div>
+
           
           <p style="margin-top: 25px; font-size: 13px; color: #5B8DEF;">
             View your digital pass card: <a href="${passImageUrl}" target="_blank" style="color: #5B8DEF;">${passImageUrl}</a>
           </p>
         </div>
-        <div className="footer">
+        <div class="footer">
           <p>&copy; ${new Date().getFullYear()} CODATOR. All rights reserved.</p>
         </div>
       </div>

@@ -27,3 +27,21 @@ CREATE POLICY "Allow anyone to read announcements"
 CREATE POLICY "Allow admins full access to announcements"
   ON public.announcements FOR ALL
   USING (public.is_admin());
+
+-- 4. Create Trigger to automatically link auth.users to public.members on signup
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE public.members
+  SET user_id = new.id
+  WHERE email = new.email;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop trigger if it exists to avoid errors on rerun
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();

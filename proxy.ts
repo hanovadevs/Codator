@@ -52,12 +52,20 @@ export async function proxy(request: NextRequest) {
   // Protect /portal routes
   if (pathname.startsWith("/portal")) {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
+  // Redirect logged-in users away from login page
+  if (pathname === "/login") {
+    if (user) {
+      return NextResponse.redirect(new URL("/portal", request.url));
     }
   }
 
   return supabaseResponse;
 }
+
 
 export const config = {
   matcher: [
