@@ -13,6 +13,7 @@ export async function GET(request: Request, { params }: PassRouteParams) {
     const { id } = await params;
     const supabase = createAdminClient();
 
+
     // 1. Fetch member details
     const { data: member, error } = await supabase
       .from("members")
@@ -31,14 +32,15 @@ export async function GET(request: Request, { params }: PassRouteParams) {
             flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "#1C1B29",
-            color: "#F2756B",
+            backgroundColor: "#F9F9FB",
+            color: "#EF4444",
             fontFamily: "sans-serif",
             padding: "40px",
-            textAlign: "center"
+            textAlign: "center",
+            border: "1px solid #E8E7F0",
           }}>
             <span style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "10px" }}>Invalid Pass</span>
-            <span style={{ fontSize: "14px", opacity: 0.7, color: "#FAFAFC" }}>This membership pass does not exist or has been revoked.</span>
+            <span style={{ fontSize: "14px", opacity: 0.7, color: "#1C1B29" }}>This membership pass does not exist or has been revoked.</span>
           </div>
         ),
         { width: 400, height: 600 }
@@ -54,11 +56,11 @@ export async function GET(request: Request, { params }: PassRouteParams) {
       width: 300,
       color: {
         dark: "#1C1B29", // Ink
-        light: "#FAFAFC", // Paper
+        light: "#FFFFFF", // White
       },
     });
 
-    // 3. Render and return the PNG Pass Image
+    // 3. Render and return the PNG Pass Image (Premium Light Theme)
     return new ImageResponse(
       (
         <div style={{
@@ -67,61 +69,87 @@ export async function GET(request: Request, { params }: PassRouteParams) {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          backgroundColor: "#1C1B29", // Deep ink
-          backgroundImage: "linear-gradient(135deg, rgba(139, 127, 232, 0.25) 0%, rgba(28, 27, 41, 0) 50%), linear-gradient(315deg, rgba(91, 141, 239, 0.25) 0%, rgba(28, 27, 41, 0) 50%)",
+          backgroundColor: "#F9F9FB", // Soft white/paper
+          backgroundImage: "linear-gradient(135deg, rgba(237, 234, 251, 0.7) 0%, rgba(255, 255, 255, 0.4) 50%), linear-gradient(315deg, rgba(240, 253, 250, 0.7) 0%, rgba(255, 255, 255, 0.4) 50%), linear-gradient(45deg, rgba(254, 251, 232, 0.5) 0%, rgba(255, 255, 255, 0.4) 100%)",
           padding: "35px",
-          color: "#FAFAFC",
+          color: "#1C1B29",
           fontFamily: "sans-serif",
           boxSizing: "border-box",
+          border: "1.5px solid #E8E7F0",
         }}>
           {/* Top Header Row */}
-          <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", width: "100%", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "20px", fontWeight: "bold", color: "#8B7FE8", letterSpacing: "-0.5px" }}>CODATOR</span>
-              <span style={{ fontSize: "9px", textTransform: "uppercase", color: "#E8E7F0", opacity: 0.5, letterSpacing: "1px", marginTop: "2px" }}>Digital Member Pass</span>
+              <span style={{ fontSize: "22px", fontWeight: "900", color: "#8B7FE8", letterSpacing: "-0.5px" }}>CODATOR</span>
+              <span style={{ fontSize: "9px", textTransform: "uppercase", color: "#1C1B29", opacity: 0.5, fontWeight: "700", letterSpacing: "1px", marginTop: "3px" }}>Digital Member Pass</span>
             </div>
+            
+            {/* Hologram Smart Chip */}
             <div style={{
               display: "flex",
-              backgroundColor: "rgba(139, 127, 232, 0.15)",
-              border: "1px solid rgba(139, 127, 232, 0.3)",
-              padding: "4px 10px",
+              width: "32px",
+              height: "24px",
+              background: "linear-gradient(135deg, #FEF08A 0%, #FDE047 50%, #CA8A04 100%)",
+              border: "1px solid #EAB308",
               borderRadius: "6px",
-              fontSize: "9px",
-              fontWeight: "bold",
-              color: "#8B7FE8",
-              letterSpacing: "0.5px"
+              boxShadow: "0 2px 4px rgba(234, 179, 8, 0.15)",
+              position: "relative",
+              overflow: "hidden"
             }}>
-              {member.status === "active" ? "VERIFIED MEMBER" : member.status.toUpperCase()}
+              <div style={{ position: "absolute", left: "8px", top: "0", bottom: "0", width: "1px", backgroundColor: "rgba(202, 138, 4, 0.4)" }} />
+              <div style={{ position: "absolute", left: "16px", top: "0", bottom: "0", width: "1px", backgroundColor: "rgba(202, 138, 4, 0.4)" }} />
+              <div style={{ position: "absolute", left: "24px", top: "0", bottom: "0", width: "1px", backgroundColor: "rgba(202, 138, 4, 0.4)" }} />
+              <div style={{ position: "absolute", top: "8px", left: "0", right: "0", height: "1px", backgroundColor: "rgba(202, 138, 4, 0.4)" }} />
+              <div style={{ position: "absolute", top: "16px", left: "0", right: "0", height: "1px", backgroundColor: "rgba(202, 138, 4, 0.4)" }} />
             </div>
           </div>
 
-          {/* QR Code Graphic */}
+          {/* QR Code Graphic (Frosted Glass Container) */}
           <div style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "#FAFAFC",
+            backgroundColor: "rgba(255, 255, 255, 0.75)",
             padding: "16px",
-            borderRadius: "16px",
+            borderRadius: "24px",
             alignSelf: "center",
-            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.4)",
+            boxShadow: "0 8px 30px rgba(139, 127, 232, 0.08)",
+            border: "1px solid rgba(232, 231, 240, 0.8)",
           }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qrCodeDataUrl} style={{ width: "180px", height: "180px" }} alt="QR Code" />
+            <img src={qrCodeDataUrl} style={{ width: "170px", height: "170px", borderRadius: "12px" }} alt="QR Code" />
           </div>
 
           {/* Footer Details */}
           <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-            <span style={{ fontSize: "9px", textTransform: "uppercase", color: "#E8E7F0", opacity: 0.5, letterSpacing: "1px", marginBottom: "4px" }}>
-              Member ID
-            </span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+              <span style={{ fontSize: "9px", textTransform: "uppercase", color: "#1C1B29", opacity: 0.5, fontWeight: "700", letterSpacing: "1px" }}>
+                Member ID
+              </span>
+              
+              {/* Status Badge */}
+              <div style={{
+                display: "flex",
+                backgroundColor: member.status === "active" ? "#ECFDF5" : "#FEF3C7",
+                border: member.status === "active" ? "1px solid #A7F3D0" : "1px solid #FDE68A",
+                padding: "3px 8px",
+                borderRadius: "6px",
+                fontSize: "8px",
+                fontWeight: "800",
+                color: member.status === "active" ? "#065F46" : "#92400E",
+                letterSpacing: "0.5px"
+              }}>
+                {member.status === "active" ? "VERIFIED" : member.status.toUpperCase()}
+              </div>
+            </div>
+            
             <span style={{
-              fontSize: "24px",
-              fontWeight: "bold",
+              fontSize: "26px",
+              fontWeight: "900",
               color: "#8B7FE8",
               letterSpacing: "1.5px",
               fontFamily: "monospace",
-              marginBottom: "20px",
+              marginBottom: "22px",
             }}>
               {member.codator_id || "PENDING"}
             </span>
@@ -131,19 +159,19 @@ export async function GET(request: Request, { params }: PassRouteParams) {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-end",
-              borderTop: "1px solid rgba(232, 231, 240, 0.15)",
+              borderTop: "1.5px solid #E8E7F0",
               paddingTop: "15px",
               width: "100%"
             }}>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "15px", fontWeight: "bold", color: "#FAFAFC" }}>
+                <span style={{ fontSize: "16px", fontWeight: "900", color: "#1C1B29", letterSpacing: "-0.3px" }}>
                   {member.full_name}
                 </span>
-                <span style={{ fontSize: "10px", color: "#E8E7F0", opacity: 0.6, marginTop: "2px" }}>
+                <span style={{ fontSize: "10px", color: "#1C1B29", opacity: 0.6, fontWeight: "600", marginTop: "3px" }}>
                   {member.department}
                 </span>
               </div>
-              <span style={{ fontSize: "10px", color: "#E8E7F0", opacity: 0.6, fontWeight: "bold" }}>
+              <span style={{ fontSize: "11px", color: "#8B7FE8", fontWeight: "800" }}>
                 {member.batch_year}
               </span>
             </div>
