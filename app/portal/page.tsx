@@ -80,6 +80,14 @@ export default async function PortalDashboardPage() {
     }
   };
 
+  // Helper to format society position display
+  const getDisplayPosition = (pos: string, dept: string) => {
+    if (["Director", "Head", "Co-Head"].includes(pos)) {
+      return `${pos} of ${dept}`;
+    }
+    return pos || "Member";
+  };
+
   return (
     <div className="space-y-10 text-ink">
       {/* Welcome Header */}
@@ -151,8 +159,9 @@ export default async function PortalDashboardPage() {
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <span className="text-2xs font-bold uppercase tracking-wider text-ink/50">Affiliation</span>
-              <h3 className="text-lg font-bold text-ink">{member.position || "Member"}</h3>
+              <h3 className="text-lg font-bold text-ink">{getDisplayPosition(member.position, member.department)}</h3>
             </div>
+
             <div className="rounded-lg bg-wisteria-tint p-2 text-wisteria border border-wisteria/10">
               <Award className="h-5 w-5" />
             </div>

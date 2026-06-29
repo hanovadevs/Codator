@@ -47,18 +47,20 @@ interface MembersClientProps {
 const POSITION_OPTIONS = [
   "President",
   "Vice-President",
-  "Tech Lead",
-  "Event Organizer",
-  "General Secretary",
-  "Design Lead",
-  "Public Relations",
   "Manager",
-  "Director of Tech & Development",
-  "Director of Graphics",
-  "Director of Content",
-  "Director of Operations",
+  "Director",
+  "Head",
+  "Co-Head",
   "Member",
 ];
+
+const DEPARTMENT_OPTIONS = [
+  "Tech and Devolpment",
+  "Media Phylum",
+  "Research Phylum",
+  "Event management",
+];
+
 
 export default function MembersClient({ initialMembers }: MembersClientProps) {
   const [members, setMembers] = useState<Member[]>(initialMembers);
@@ -101,13 +103,22 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
     new Set(members.map((m) => m.department))
   ).filter(Boolean);
 
+  // Helper to format display position (e.g. "Director of Tech and Devolpment")
+  const getDisplayPosition = (m: Member) => {
+    if (["Director", "Head", "Co-Head"].includes(m.position) && m.department) {
+      return `${m.position} of ${m.department}`;
+    }
+    return m.position;
+  };
+
   // Filter members list
   const filteredMembers = members.filter((m) => {
+    const displayPos = getDisplayPosition(m);
     const matchesSearch =
       m.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (m.codator_id && m.codator_id.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      m.position.toLowerCase().includes(searchQuery.toLowerCase());
+      displayPos.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === "all" || m.status === statusFilter;
     const matchesDept = deptFilter === "all" || m.department === deptFilter;
@@ -115,6 +126,7 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
 
     return matchesSearch && matchesStatus && matchesDept && matchesRole;
   });
+
 
   // Open details slide-over and prep edit form
   const handleOpenDetails = (member: Member) => {
@@ -346,15 +358,16 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="w-full px-3 py-2 text-xs font-semibold bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria"
+          className="w-full px-3 py-2 text-xs font-semibold bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria font-semibold"
         >
-          <option value="all">Department: All</option>
-          {departments.map((dept) => (
+          <option value="all">Phylum: All</option>
+          {DEPARTMENT_OPTIONS.map((dept) => (
             <option key={dept} value={dept}>
               {dept}
             </option>
           ))}
         </select>
+
 
         <select
           value={roleFilter}
@@ -402,11 +415,12 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                           <span className="block font-bold text-ink leading-tight">{member.full_name}</span>
                           <span className="inline-flex items-center gap-1 text-5xs font-bold text-wisteria bg-wisteria-tint/40 border border-wisteria/10 px-1.5 py-0.5 rounded mt-0.5">
                             <Award className="h-3 w-3" />
-                            {member.position}
+                            {getDisplayPosition(member)}
                           </span>
                         </div>
                       </div>
                     </td>
+
 
                     {/* CODATOR ID */}
                     <td className="py-4 px-4 font-mono text-4xs font-bold text-ink/75 tracking-wider">
@@ -558,16 +572,22 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                   </div>
 
                   <div>
-                    <label className="block text-ink/75 mb-1">Department *</label>
-                    <input
-                      type="text"
+                    <label className="block text-ink/75 mb-1">Phylum (Department) *</label>
+                    <select
                       required
-                      placeholder="e.g. Computer Science"
                       value={addForm.department}
                       onChange={(e) => setAddForm({ ...addForm, department: e.target.value })}
-                      className="w-full px-3 py-2 bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria"
-                    />
+                      className="w-full px-3 py-2 bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria font-semibold"
+                    >
+                      <option value="">Select Phylum</option>
+                      {DEPARTMENT_OPTIONS.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+
 
                   <div>
                     <label className="block text-ink/75 mb-1">Email Address *</label>
@@ -734,14 +754,20 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-ink/75 mb-1">Department</label>
-                        <input
-                          type="text"
+                        <label className="block text-ink/75 mb-1">Phylum (Department)</label>
+                        <select
                           value={editForm.department}
                           onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                          className="w-full px-3 py-2 bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria"
-                        />
+                          className="w-full px-3 py-2 bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria font-semibold"
+                        >
+                          {DEPARTMENT_OPTIONS.map((dept) => (
+                            <option key={dept} value={dept}>
+                              {dept}
+                            </option>
+                          ))}
+                        </select>
                       </div>
+
                       <div>
                         <label className="block text-ink/75 mb-1">Batch Year</label>
                         <input
@@ -803,8 +829,9 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                       <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
                         <div>
                           <span className="block text-5xs text-ink/55">Society Position</span>
-                          <span className="text-wisteria font-bold">{selectedMember.position}</span>
+                          <span className="text-wisteria font-bold">{getDisplayPosition(selectedMember)}</span>
                         </div>
+
                         <div>
                           <span className="block text-5xs text-ink/55">Dashboard Access</span>
                           <span className="text-ink">
