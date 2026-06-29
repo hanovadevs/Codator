@@ -88,7 +88,8 @@ export default function AdminLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full rounded-lg border border-mist bg-paper pl-10 pr-4 py-2.5 text-sm text-ink focus:border-wisteria focus:outline-none focus:ring-1 focus:ring-wisteria transition-colors"
-                  placeholder="admin@codator.org"
+                  placeholder="uetcodator@gmail.com"
+
                 />
               </div>
             </div>

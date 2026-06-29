@@ -156,7 +156,7 @@ export async function sendWelcomeEmail(member: EmailMemberPayload) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: "CODATOR <noreply@codator.org>",
+        from: "CODATOR <uetcodator@gmail.com>",
         to: member.email,
         subject: "Welcome to CODATOR — Your membership is confirmed",
         html: htmlContent,
@@ -167,6 +167,7 @@ export async function sendWelcomeEmail(member: EmailMemberPayload) {
       console.error("Failed to send email via Resend:", err);
     }
   }
+
 
   // 2. Try SMTP
   if (

@@ -166,9 +166,10 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-display text-base font-bold text-ink">Email Us</h3>
                   <p className="text-sm text-ink/65 mt-1">For general inquiries, sponsorship, or speaker proposals.</p>
-                  <a href="mailto:contact@codator.org" className="text-sm font-semibold text-wisteria hover:underline mt-2 inline-block font-mono">
-                    contact@codator.org
+                  <a href="mailto:uetcodator@gmail.com" className="text-sm font-semibold text-wisteria hover:underline mt-2 inline-block font-mono">
+                    uetcodator@gmail.com
                   </a>
+
                 </div>
               </div>
 
