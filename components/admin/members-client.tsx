@@ -45,14 +45,19 @@ interface MembersClientProps {
 }
 
 const POSITION_OPTIONS = [
+  "Mentor",
   "President",
-  "Vice-President",
-  "Manager",
+  "Vice President",
+  "Vice President (Female)",
+  "Managing Director",
+  "General secretary",
+  "Treasurer",
   "Director",
   "Head",
   "Co-Head",
   "Member",
 ];
+
 
 const DEPARTMENT_OPTIONS = [
   "Tech and Devolpment",
