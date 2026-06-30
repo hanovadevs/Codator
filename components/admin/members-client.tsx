@@ -438,21 +438,21 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
       </div>
 
       {/* Members Directory Table */}
-      <div className="border border-mist rounded-3xl bg-white/50 overflow-hidden shadow-xs">
+      <div className="border border-white/80 bg-white/40 backdrop-blur-md rounded-3xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-mist bg-paper/50 text-4xs font-bold uppercase tracking-widest text-ink/50">
-                <th className="py-4 px-6">Member & Position</th>
+              <tr className="border-b border-mist/30 bg-[#F8F8FC]/60 text-5xs font-bold uppercase tracking-widest text-ink/50">
+                <th className="py-4 px-5 sticky left-0 bg-[#F8F8FC] z-10 border-r border-mist/25">Member & Position</th>
                 <th className="py-4 px-4">CODATOR ID</th>
                 <th className="py-4 px-4">Contact</th>
                 <th className="py-4 px-4">Department</th>
                 <th className="py-4 px-4">Dashboard Access</th>
                 <th className="py-4 px-4">Status</th>
-                <th className="py-4 px-6 text-right">Actions</th>
+                <th className="py-4 px-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-mist/50 text-xs font-medium">
+            <tbody className="divide-y divide-mist/25 text-xs font-medium">
               {filteredMembers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-ink/50 font-medium">
@@ -461,9 +461,9 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                 </tr>
               ) : (
                 filteredMembers.map((member) => (
-                  <tr key={member.id} className="hover:bg-paper/30 transition-colors">
-                    {/* Name & Position */}
-                    <td className="py-4 px-6">
+                  <tr key={member.id} className="hover:bg-paper/40 transition-colors group">
+                    {/* Name & Position (Sticky on left with subtle depth shadow) */}
+                    <td className="py-3.5 px-5 sticky left-0 bg-white/95 backdrop-blur-md z-10 border-r border-mist/25 group-hover:bg-paper/10 transition-colors shadow-[4px_0_8px_-4px_rgba(0,0,0,0.02)]">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-xl bg-wisteria-tint/45 text-wisteria border border-wisteria/10 flex items-center justify-center font-bold text-xs">
                           {member.full_name.charAt(0).toUpperCase()}
@@ -478,39 +478,38 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                       </div>
                     </td>
 
-
                     {/* CODATOR ID */}
-                    <td className="py-4 px-4 font-mono text-4xs font-bold text-ink/75 tracking-wider">
+                    <td className="py-3.5 px-4 font-mono text-4xs font-bold text-ink/75 tracking-wider">
                       {member.codator_id || "—"}
                     </td>
 
                     {/* Contact */}
-                    <td className="py-4 px-4">
-                      <span className="block text-ink">{member.email}</span>
-                      <span className="block text-4xs text-ink/50 mt-0.5">{member.phone || "—"}</span>
+                    <td className="py-3.5 px-4">
+                      <span className="block text-ink text-5xs font-bold">{member.email}</span>
+                      <span className="block text-5xs text-ink/45 font-semibold mt-0.5">{member.phone || "—"}</span>
                     </td>
 
                     {/* Department */}
-                    <td className="py-4 px-4">
-                      <span className="block text-ink">{member.department}</span>
-                      <span className="block text-4xs text-ink/50 mt-0.5">{member.batch_year}</span>
+                    <td className="py-3.5 px-4">
+                      <span className="block text-ink text-5xs font-semibold">{member.department}</span>
+                      <span className="block text-5xs text-ink/45 font-bold mt-0.5">{member.batch_year}</span>
                     </td>
 
                     {/* Dashboard Role */}
-                    <td className="py-4 px-4">
+                    <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center gap-1 text-5xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                        className={`inline-flex items-center gap-1 text-5xs font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
                           member.role === "admin"
                             ? "bg-purple-50 text-purple-700 border-purple-200"
                             : "bg-blue-50 text-blue-700 border-blue-200"
                         }`}
                       >
-                        {member.role === "admin" ? "Admin (Has Panel)" : "Member"}
+                        {member.role === "admin" ? "Admin" : "Member"}
                       </span>
                     </td>
 
                     {/* Status */}
-                    <td className="py-4 px-4">
+                    <td className="py-3.5 px-4">
                       <span
                         className={`inline-flex items-center gap-1 text-5xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                           member.status === "active"
@@ -525,11 +524,11 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                     </td>
 
                     {/* Actions */}
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-3">
+                    <td className="py-3.5 px-5 text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleOpenDetails(member)}
-                          className="text-5xs font-bold uppercase tracking-wider text-ink/65 hover:text-wisteria hover:underline cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-wisteria-tint/40 text-wisteria hover:bg-wisteria hover:text-white transition-all text-6xs font-bold uppercase tracking-wider border border-wisteria/10 cursor-pointer active:scale-[0.97]"
                         >
                           Details
                         </button>
@@ -538,7 +537,7 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                           <button
                             disabled={actionLoading[member.id]}
                             onClick={() => handleSuspendMember(member.id)}
-                            className="text-5xs font-bold uppercase tracking-wider text-red-600 hover:text-red-700 disabled:opacity-50 cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all text-6xs font-bold uppercase tracking-wider border border-red-100 cursor-pointer active:scale-[0.97] disabled:opacity-50"
                           >
                             Suspend
                           </button>
@@ -547,7 +546,7 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                             <button
                               disabled={actionLoading[member.id]}
                               onClick={() => handleReactivateMember(member.id)}
-                              className="text-5xs font-bold uppercase tracking-wider text-emerald-600 hover:text-emerald-700 disabled:opacity-50 cursor-pointer"
+                              className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all text-6xs font-bold uppercase tracking-wider border border-emerald-100 cursor-pointer active:scale-[0.97] disabled:opacity-50"
                             >
                               Reactivate
                             </button>
