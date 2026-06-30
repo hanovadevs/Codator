@@ -155,16 +155,23 @@ export async function sendWelcomeEmail(member: EmailMemberPayload) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: "CODATOR <uetcodator@gmail.com>",
+      const fromEmail = process.env.RESEND_FROM || "onboarding@resend.dev";
+      
+      const { data, error } = await resend.emails.send({
+        from: `CODATOR <${fromEmail}>`,
         to: member.email,
         subject: "Welcome to CODATOR — Your membership is confirmed",
         html: htmlContent,
       });
-      console.log(`Welcome email successfully sent via Resend to ${member.email}`);
-      return;
+
+      if (error) {
+        console.error("Resend API error (falling back to SMTP if configured):", error);
+      } else {
+        console.log(`Welcome email successfully sent via Resend to ${member.email}`);
+        return;
+      }
     } catch (err) {
-      console.error("Failed to send email via Resend:", err);
+      console.error("Failed to send email via Resend (falling back to SMTP if configured):", err);
     }
   }
 
