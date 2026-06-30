@@ -47,6 +47,7 @@ export default function AdminLoginPage() {
               src="/without%20text_logo.png"
               alt="CODATOR Logo"
               fill
+              sizes="64px"
               className="object-contain"
               priority
             />

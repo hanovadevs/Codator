@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { IdCard, Calendar, ArrowRight, Award, Flame, Zap, Megaphone, Info, AlertTriangle, Briefcase } from "lucide-react";
+import { IdCard, Calendar, ArrowRight, Award, Flame, Zap, Megaphone, Info, AlertTriangle, Briefcase, Trophy, Star, ShieldCheck } from "lucide-react";
 
 export const revalidate = 0; // Dynamic dashboard
 
@@ -14,7 +14,7 @@ export default async function PortalDashboardPage() {
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, full_name, codator_id, department, batch_year, position")
+    .select("id, full_name, codator_id, department, batch_year, position, status")
     .or(`user_id.eq.${user?.id},email.eq.${user?.email}`)
     .single();
 
@@ -28,7 +28,14 @@ export default async function PortalDashboardPage() {
     .select("*", { count: "exact", head: true })
     .eq("member_id", member.id);
 
-  // 3. Fetch next 2 upcoming public events
+  // 3. Fetch count of checked-in events (attended)
+  const { count: checkedInCount } = await supabase
+    .from("event_registrations")
+    .select("*", { count: "exact", head: true })
+    .eq("member_id", member.id)
+    .not("checked_in_at", "is", null);
+
+  // 4. Fetch next 2 upcoming public events
   const { data: upcomingEvents } = await supabase
     .from("events")
     .select("id, title, category, date_start, slug")
@@ -37,7 +44,7 @@ export default async function PortalDashboardPage() {
     .order("date_start", { ascending: true })
     .limit(2);
 
-  // 4. Fetch latest 3 announcements
+  // 5. Fetch latest 3 announcements
   const { data: announcements } = await supabase
     .from("announcements")
     .select("id, title, content, category, created_at")
@@ -87,6 +94,50 @@ export default async function PortalDashboardPage() {
     }
     return pos || "Member";
   };
+
+  // Gamification Calculations
+  const attendedCount = checkedInCount || 0;
+  const totalXp = 100 + attendedCount * 200;
+  const currentLevel = Math.floor(totalXp / 500) + 1;
+  const xpInLevel = totalXp % 500;
+  const xpNeeded = 500;
+  const xpPercent = Math.min((xpInLevel / xpNeeded) * 100, 100);
+
+  // Achievements Configuration
+  const achievements = [
+    {
+      id: "verified",
+      title: "Official Member",
+      desc: "Account is active",
+      unlocked: member.status === "active",
+      icon: ShieldCheck,
+      color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+    },
+    {
+      id: "first_reg",
+      title: "First Step",
+      desc: "Registered for an event",
+      unlocked: (regCount || 0) >= 1,
+      icon: Star,
+      color: "text-amber-600 bg-amber-50 border-amber-200",
+    },
+    {
+      id: "first_checkin",
+      title: "Attendee",
+      desc: "Attended 1 event",
+      unlocked: attendedCount >= 1,
+      icon: Trophy,
+      color: "text-purple-600 bg-purple-50 border-purple-200",
+    },
+    {
+      id: "veteran",
+      title: "Enthusiast",
+      desc: "Attended 3+ events",
+      unlocked: attendedCount >= 3,
+      icon: Zap,
+      color: "text-skyline bg-skyline-tint/30 border-skyline/20",
+    },
+  ];
 
   return (
     <div className="space-y-10 text-ink">
@@ -175,6 +226,64 @@ export default async function PortalDashboardPage() {
               <Zap className="h-3 w-3 fill-emerald-600" />
               Active Status
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gamification & Achievements Section */}
+      <div className="grid gap-6 md:grid-cols-12">
+        {/* XP Progress Card */}
+        <div className="md:col-span-5 border border-white/80 bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-xs space-y-5 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="rounded-lg bg-wisteria-tint/50 p-2 text-wisteria border border-wisteria/10">
+                <Trophy className="h-4.5 w-4.5 animate-bounce" />
+              </div>
+              <div>
+                <span className="text-5xs font-bold uppercase tracking-widest text-ink/40">Member Standing</span>
+                <h3 className="text-sm font-bold text-ink leading-tight">XP Level {currentLevel}</h3>
+              </div>
+            </div>
+            <p className="text-5xs text-ink/65 font-semibold">Attend events to earn XP and level up your standing!</p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-5xs font-bold uppercase tracking-widest text-ink/60">
+              <span>{xpInLevel} / {xpNeeded} XP</span>
+              <span className="text-wisteria">{Math.round(xpPercent)}% Complete</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-mist/40 overflow-hidden border border-mist/20">
+              <div 
+                className="h-full bg-gradient-to-r from-wisteria to-skyline rounded-full transition-all duration-500" 
+                style={{ width: `${xpPercent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Badges Grid */}
+        <div className="md:col-span-7 border border-white/80 bg-white/40 backdrop-blur-md rounded-3xl p-6 shadow-xs space-y-4">
+          <h3 className="font-display text-xs font-bold text-ink uppercase tracking-wider border-b border-mist/30 pb-2">My Achievements</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {achievements.map((ach) => {
+              const Icon = ach.icon;
+              return (
+                <div 
+                  key={ach.id}
+                  className={`flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all duration-300 ${
+                    ach.unlocked 
+                      ? `${ach.color} shadow-3xs hover:-translate-y-0.5` 
+                      : "bg-mist/15 border-mist/30 text-ink/30 opacity-50"
+                  }`}
+                >
+                  <div className={`rounded-xl p-2 border ${ach.unlocked ? "border-current/10 bg-white/60" : "border-mist/30 bg-mist/10"} mb-3`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h4 className="text-5xs font-bold leading-tight mb-1">{ach.title}</h4>
+                  <p className="text-6xs font-semibold text-ink/50 leading-tight">{ach.desc}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

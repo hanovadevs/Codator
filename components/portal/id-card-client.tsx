@@ -36,15 +36,23 @@ export default function IdCardClient({ member, qrCodeUrl }: IdCardClientProps) {
     const rect = event.currentTarget.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
-    const mouseX = event.clientX - rect.left - width / 2;
-    const mouseY = event.clientY - rect.top - height / 2;
+    const mouseXRaw = event.clientX - rect.left;
+    const mouseYRaw = event.clientY - rect.top;
+    const mouseX = mouseXRaw - width / 2;
+    const mouseY = mouseYRaw - height / 2;
     x.set(mouseX);
     y.set(mouseY);
+
+    // Update CSS variables for holographic glare
+    event.currentTarget.style.setProperty("--mouse-x", `${(mouseXRaw / width) * 100}%`);
+    event.currentTarget.style.setProperty("--mouse-y", `${(mouseYRaw / height) * 100}%`);
   };
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     x.set(0);
     y.set(0);
+    event.currentTarget.style.setProperty("--mouse-x", "50%");
+    event.currentTarget.style.setProperty("--mouse-y", "50%");
   };
 
   const handleDownload = async () => {
@@ -99,13 +107,20 @@ export default function IdCardClient({ member, qrCodeUrl }: IdCardClientProps) {
           }}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ type: "spring", damping: 20, stiffness: 80 }}
-          className="w-full h-full relative duration-150 rounded-3xl border border-mist/80 shadow-xl"
+          className="w-full h-full relative duration-150 rounded-3xl border border-mist/80 shadow-xl group"
         >
           {/* ================= CARD FRONT (LIGHT THEME) ================= */}
           <div
             style={{ backfaceVisibility: "hidden" }}
             className="absolute inset-0 w-full h-full bg-white/90 backdrop-blur-md rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-white/60"
           >
+            {/* Holographic Glare Overlay */}
+            <div 
+              className="absolute inset-0 z-20 pointer-events-none rounded-3xl mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 50%)"
+              }}
+            />
             {/* Ambient Background Glows (Mesh pastel gradients) */}
             <div className="absolute -top-32 -left-32 h-64 w-64 rounded-full bg-wisteria/15 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-skyline/15 blur-3xl pointer-events-none" />
@@ -208,6 +223,13 @@ export default function IdCardClient({ member, qrCodeUrl }: IdCardClientProps) {
             }}
             className="absolute inset-0 w-full h-full bg-[#FAFAFC] rounded-3xl p-6 flex flex-col justify-between overflow-hidden border border-mist/50"
           >
+            {/* Holographic Glare Overlay */}
+            <div 
+              className="absolute inset-0 z-20 pointer-events-none rounded-3xl mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 50%)"
+              }}
+            />
             {/* Ambient Background Glows */}
             <div className="absolute -top-32 -right-32 h-64 w-64 rounded-full bg-skyline/10 blur-3xl pointer-events-none" />
 

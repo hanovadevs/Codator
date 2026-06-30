@@ -458,6 +458,89 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 3.5 FEATURED PROJECTS SECTION */}
+      <section className="py-20 sm:py-24 bg-white/10 relative overflow-hidden border-t border-mist/45">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-16">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/85 bg-white/50 backdrop-blur-md px-3 py-0.5 text-5xs font-bold uppercase tracking-widest text-wisteria mb-3 shadow-[0_4px_12px_rgba(0,0,0,0.01)]"
+            >
+              Crafted by Members
+            </motion.span>
+            <motion.h2
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl text-[#1D1B26]"
+            >
+              Featured Projects
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="mt-3 text-xs text-ink/60 font-semibold max-w-md mx-auto"
+            >
+              Explore production-grade software applications and open-source tools developed entirely by CODATOR teams.
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                title: "CampusMap",
+                desc: "Interactive room finder and pathfinder for the campus. Optimizes navigation routes using Dijkstra's algorithm.",
+                tech: ["Next.js", "Rust", "Wasm"],
+              },
+              {
+                title: "UET Scheduler",
+                desc: "Conflict-free timetable generator and exam scheduler. Simplifies academic planning for thousands of students.",
+                tech: ["React", "Supabase", "Tailwind"],
+              },
+              {
+                title: "GitGlow",
+                desc: "Open-source developer dashboard to track contribution streaks and visualize team git activity.",
+                tech: ["Vite", "Chart.js", "GitHub API"],
+              },
+            ].map((proj, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.08 }}
+                className="group flex flex-col justify-between rounded-2xl border border-white/80 bg-white/35 backdrop-blur-md p-5 shadow-xs hover:shadow-[0_12px_40px_rgba(142,132,173,0.06)] hover:border-wisteria/35 transition-all duration-300 hover:-translate-y-0.5"
+              >
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-display text-sm font-bold text-ink group-hover:text-wisteria transition-colors">
+                      {proj.title}
+                    </h3>
+                    <span className="text-6xs font-bold text-wisteria bg-wisteria-tint/40 border border-wisteria/10 px-2 py-0.5 rounded uppercase">
+                      Open Source
+                    </span>
+                  </div>
+                  <p className="text-5xs leading-relaxed text-ink/65 font-semibold">
+                    {proj.desc}
+                  </p>
+                </div>
+                <div className="mt-5 pt-4 border-t border-mist/30 flex flex-wrap gap-1.5">
+                  {proj.tech.map((t) => (
+                    <span key={t} className="text-6xs font-mono font-bold text-ink/45 bg-mist/20 px-1.5 py-0.5 rounded">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 4. UPCOMING EVENTS SECTION */}
       <section className="py-20 sm:py-24 border-t border-b border-mist/40 bg-white/10 relative overflow-hidden">
         {/* Soft background glow */}
@@ -566,6 +649,128 @@ export default function HomePage() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* 4.5 MILESTONES & TESTIMONIALS SECTION */}
+      <section className="py-20 sm:py-24 bg-[#FAF9FD] relative overflow-hidden border-t border-mist/45">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40vw] h-[40vw] rounded-full bg-wisteria/5 blur-[120px] pointer-events-none" />
+
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10 space-y-24">
+          
+          {/* Milestones Horizontal Timeline */}
+          <div className="space-y-12">
+            <div className="mx-auto max-w-2xl text-center">
+              <motion.span
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/85 bg-white/50 backdrop-blur-md px-3 py-0.5 text-5xs font-bold uppercase tracking-widest text-wisteria mb-3 shadow-[0_4px_12px_rgba(0,0,0,0.01)]"
+              >
+                Our Growth
+              </motion.span>
+              <h2 className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl text-[#1D1B26]">
+                Society Milestones
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+              {/* Timeline Horizontal Connector Line for Desktop */}
+              <div className="hidden md:block absolute top-[15px] left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-wisteria/20 via-skyline/20 to-wisteria/20 -z-10" />
+
+              {[
+                {
+                  year: "2024",
+                  title: "Inception & 100+ Members",
+                  desc: "CODATOR was established, uniting CS and CE students under a structured learning roadmap.",
+                },
+                {
+                  year: "2025",
+                  title: "Launch of Open-Source Hub",
+                  desc: "Released campus utility tools on GitHub and hosted our first 24-hour sprint.",
+                },
+                {
+                  year: "2026",
+                  title: "National Hackathons & Passes",
+                  desc: "Introduced advanced digital passes and expanded to host regional inter-university hackathons.",
+                },
+              ].map((milestone, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: idx * 0.1 }}
+                  className="flex flex-col items-center text-center space-y-3"
+                >
+                  {/* Glowing Node */}
+                  <div className="h-8 w-8 rounded-full border border-white bg-white shadow-md flex items-center justify-center relative">
+                    <span className="h-2.5 w-2.5 rounded-full bg-wisteria animate-pulse" />
+                  </div>
+                  <div className="space-y-1.5 max-w-xs">
+                    <span className="font-mono text-xs font-black text-wisteria">{milestone.year}</span>
+                    <h3 className="font-display text-xs font-bold text-ink">{milestone.title}</h3>
+                    <p className="text-5xs text-ink/60 leading-relaxed font-semibold">{milestone.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Testimonials */}
+          <div className="space-y-12">
+            <div className="mx-auto max-w-2xl text-center">
+              <motion.span
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/85 bg-white/50 backdrop-blur-md px-3 py-0.5 text-5xs font-bold uppercase tracking-widest text-wisteria mb-3 shadow-[0_4px_12px_rgba(0,0,0,0.01)]"
+              >
+                Voices of CODATOR
+              </motion.span>
+              <h2 className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl text-[#1D1B26]">
+                What Our Leaders Say
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[
+                {
+                  quote: "CODATOR isn't just a society; it's a launchpad. Collaborating on production-ready systems here gave us the confidence to build real-world software.",
+                  name: "Fahad Ali",
+                  role: "President",
+                },
+                {
+                  quote: "The peer mentorship and technical sprints bridge the gap between classroom theory and industry-level software engineering.",
+                  name: "Aqsa Sanaullah",
+                  role: "Vice President (Female)",
+                },
+              ].map((test, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  className="flex flex-col justify-between rounded-3xl border border-white/80 bg-white/40 backdrop-blur-md p-6 shadow-xs relative"
+                >
+                  <p className="text-xs italic leading-relaxed text-ink/80 font-medium">
+                    &ldquo;{test.quote}&rdquo;
+                  </p>
+                  <div className="mt-6 pt-4 border-t border-mist/35 flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-wisteria-tint/50 border border-wisteria/10 flex items-center justify-center text-wisteria font-display text-2xs font-bold">
+                      {test.name[0]}
+                    </div>
+                    <div>
+                      <h4 className="text-5xs font-bold text-[#1D1B26]">{test.name}</h4>
+                      <p className="text-6xs font-bold text-ink/45 uppercase tracking-wider">{test.role}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 

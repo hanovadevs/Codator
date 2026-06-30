@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Mail } from "lucide-react";
-import { GithubIcon, LinkedinIcon, InstagramIcon } from "@/components/ui/brand-icons";
+import { GithubIcon, LinkedinIcon, InstagramIcon, FacebookIcon } from "@/components/ui/brand-icons";
 
 export default function Footer() {
   return (
@@ -30,7 +30,7 @@ export default function Footer() {
             <p className="text-sm leading-relaxed text-ink/65 font-semibold">
               The university Computer Science & Engineering society. We build systems, host workshops, and foster a community of passionate student builders.
             </p>
-            <div className="flex gap-4.5 text-ink/40 pt-2">
+            <div className="flex gap-3.5 pt-2">
               <a
                 href="https://github.com"
                 target="_blank"
@@ -41,7 +41,7 @@ export default function Footer() {
                 <GithubIcon className="h-4 w-4" />
               </a>
               <a
-                href="https://linkedin.com"
+                href="https://www.linkedin.com/company/codator1/posts/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-wisteria hover:scale-110 transition-all p-1.5 rounded-lg bg-paper border border-mist hover:border-wisteria/30 shadow-3xs"
@@ -50,13 +50,22 @@ export default function Footer() {
                 <LinkedinIcon className="h-4 w-4" />
               </a>
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/codator.cse/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-wisteria hover:scale-110 transition-all p-1.5 rounded-lg bg-paper border border-mist hover:border-wisteria/30 shadow-3xs"
               >
                 <span className="sr-only">Instagram</span>
                 <InstagramIcon className="h-4 w-4" />
+              </a>
+              <a
+                href="https://www.facebook.com/share/18j85P8K6r/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-wisteria hover:scale-110 transition-all p-1.5 rounded-lg bg-paper border border-mist hover:border-wisteria/30 shadow-3xs"
+              >
+                <span className="sr-only">Facebook</span>
+                <FacebookIcon className="h-4 w-4" />
               </a>
             </div>
           </div>

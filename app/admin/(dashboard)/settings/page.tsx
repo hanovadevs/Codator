@@ -1,12 +1,29 @@
-export default function AdminSettingsPage() {
-  return (
-    <div>
-      <h1 className="font-display text-3xl font-bold tracking-tight text-ink mb-2">Admin Settings</h1>
-      <p className="text-ink/70 mb-8">Manage administrator accounts and configure application settings.</p>
-      
-      <div className="border border-dashed border-mist rounded-xl p-12 text-center text-ink/50">
-        <p>Admin settings controls will be implemented in Phase 5/9.</p>
-      </div>
-    </div>
-  );
+import { createClient } from "@/lib/supabase/server";
+import SettingsClient from "@/components/admin/settings-client";
+
+export const revalidate = 0; // Dynamic page
+
+export default async function AdminSettingsPage() {
+  const supabase = await createClient();
+
+  // Fetch all settings from database
+  const { data: dbSettings } = await supabase
+    .from("society_settings")
+    .select("key, value");
+
+  // Format settings into a key-value object with default fallbacks
+  const settings: Record<string, string> = {
+    society_name: "CODATOR",
+    contact_email: "contact@codator.org",
+    registrations_open: "true",
+    allowed_domains: ".edu, .edu.pk",
+  };
+
+  if (dbSettings) {
+    dbSettings.forEach((item) => {
+      settings[item.key] = item.value;
+    });
+  }
+
+  return <SettingsClient initialSettings={settings} />;
 }

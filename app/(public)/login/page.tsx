@@ -122,6 +122,7 @@ export default function PortalLoginPage() {
               src="/without%20text_logo.png"
               alt="CODATOR Logo"
               fill
+              sizes="56px"
               className="object-contain"
               priority
             />
