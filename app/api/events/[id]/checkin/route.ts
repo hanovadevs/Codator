@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: CheckInParams) {
 
     // 4. Cryptographically verify the pass token
     const passSecret = process.env.PASS_SECRET || "default_pass_secret_key_12345";
-    const isValid = verifyPassToken(token, `${memberId}|${member.codator_id}`, passSecret);
+    const isValid = verifyPassToken(`${memberId}|${member.codator_id}`, token, passSecret);
 
     if (!isValid) {
       return NextResponse.json({ error: "Invalid pass signature. Security verification failed." }, { status: 400 });

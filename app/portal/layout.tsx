@@ -18,7 +18,7 @@ export default async function PortalLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   // 2. Query member profile

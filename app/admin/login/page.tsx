@@ -30,9 +30,8 @@ export default function AdminLoginPage() {
         throw error;
       }
 
-      // Refresh the page state and route to admin panel
-      router.refresh();
-      router.push("/admin");
+      // Use a hard redirect to ensure cookies are fully committed and sent to the server
+      window.location.href = "/admin";
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Failed to log in. Please check your credentials.");
       setIsLoading(false);

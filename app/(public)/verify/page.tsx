@@ -35,7 +35,7 @@ export default async function PublicVerifyPage({ searchParams }: VerifyPageProps
       member = data;
       // 2. Cryptographically verify the token signature
       const passSecret = process.env.PASS_SECRET || "default_pass_secret_key_12345";
-      isValid = verifyPassToken(token, `${id}|${member.codator_id}`, passSecret);
+      isValid = verifyPassToken(`${id}|${member.codator_id}`, token, passSecret);
       
       if (!isValid) {
         errorDetail = "Pass signature verification failed. The pass may have been tampered with.";

@@ -43,9 +43,8 @@ export default function PortalLoginPage() {
 
       if (error) throw error;
 
-      // Force a hard refresh to update the middleware state and redirect
-      router.refresh();
-      router.push("/portal");
+      // Use a hard redirect to ensure cookies are fully committed and sent to the server
+      window.location.href = "/portal";
     } catch (err) {
       console.error("Sign in error:", err);
       setErrorMsg(err instanceof Error ? err.message : "Failed to sign in. Please check your credentials.");
