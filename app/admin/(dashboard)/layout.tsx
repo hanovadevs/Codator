@@ -3,7 +3,8 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/admin/signout-button";
-import { ShieldAlert, Users, Calendar, Megaphone, Settings, FileText, LayoutDashboard, Globe } from "lucide-react";
+import AdminLayoutShell from "@/components/admin/admin-layout-shell";
+import { ShieldAlert, Globe } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -55,82 +56,10 @@ export default async function AdminLayout({
     );
   }
 
+  // 4. Active Admin State - Render Admin Dashboard Layout
   return (
-    <div className="flex min-h-screen bg-paper text-ink">
-      {/* Admin Sidebar */}
-      <aside className="w-64 border-r border-mist bg-paper/50 flex flex-col justify-between">
-        <div className="p-6">
-          <div className="flex flex-col gap-1">
-            <Link href="/admin" className="font-display text-xl font-bold text-wisteria">
-              CODATOR Admin
-            </Link>
-            <span className="text-xs text-ink/50 font-medium">
-              Logged in as: <span className="font-semibold">{member.full_name}</span>
-            </span>
-          </div>
-          
-          <nav className="mt-8 flex flex-col gap-1.5 text-sm font-medium">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-wisteria-tint hover:text-wisteria transition-colors"
-            >
-              <LayoutDashboard className="h-4 w-4 text-ink/40" />
-              Overview
-            </Link>
-            <Link
-              href="/admin/applications"
-              className="flex items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-wisteria-tint hover:text-wisteria transition-colors"
-            >
-              <FileText className="h-4 w-4 text-ink/40" />
-              Applications
-            </Link>
-            <Link
-              href="/admin/members"
-              className="flex items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-wisteria-tint hover:text-wisteria transition-colors"
-            >
-              <Users className="h-4 w-4 text-ink/40" />
-              Members
-            </Link>
-            <Link
-              href="/admin/events"
-              className="flex items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-wisteria-tint hover:text-wisteria transition-colors"
-            >
-              <Calendar className="h-4 w-4 text-ink/40" />
-              Events
-            </Link>
-            <Link
-              href="/admin/announcements"
-              className="flex items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-wisteria-tint hover:text-wisteria transition-colors"
-            >
-              <Megaphone className="h-4 w-4 text-ink/40" />
-              Announcements
-            </Link>
-            <Link
-              href="/admin/settings"
-              className="flex items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-wisteria-tint hover:text-wisteria transition-colors"
-            >
-              <Settings className="h-4 w-4 text-ink/40" />
-              Settings
-            </Link>
-          </nav>
-        </div>
-        
-        <div className="p-6 border-t border-mist flex flex-col gap-2.5">
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 rounded-lg px-4 py-2 text-sm font-medium text-ink/50 hover:text-ink transition-colors"
-          >
-            <Globe className="h-4 w-4" />
-            Public Site
-          </Link>
-          <SignOutButton />
-        </div>
-      </aside>
-
-      {/* Admin Content */}
-      <main className="flex-1 p-8 md:p-12 overflow-auto">
-        {children}
-      </main>
-    </div>
+    <AdminLayoutShell member={member} signOutButton={<SignOutButton />}>
+      {children}
+    </AdminLayoutShell>
   );
 }
