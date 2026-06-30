@@ -5,13 +5,15 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ShieldCheck, Mail, Lock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ShieldCheck, Mail, Lock, Loader2, CheckCircle2, AlertCircle, UserPlus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function PortalLoginPage() {
   const [activeTab, setActiveTab] = useState<"signin" | "activate">("signin");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
@@ -85,6 +87,9 @@ export default function PortalLoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.code === "NOT_REGISTERED") {
+          setShowRegisterModal(true);
+        }
         throw new Error(data.error || "Failed to activate account.");
       }
 
@@ -287,6 +292,56 @@ export default function PortalLoginPage() {
           )}
         </div>
       </div>
+
+      {/* ================= REGISTER PROMPT MODAL ================= */}
+      <AnimatePresence>
+        {showRegisterModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowRegisterModal(false)}
+              className="fixed inset-0 z-50 bg-[#13121A]/40 backdrop-blur-xs flex items-center justify-center p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.95, y: 15 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 15 }}
+                transition={{ type: "spring", damping: 25, stiffness: 250 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-sm bg-paper border border-mist p-6 rounded-3xl shadow-2xl text-center space-y-5"
+              >
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-wisteria-tint text-wisteria border border-wisteria/10">
+                  <UserPlus className="h-6 w-6" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="font-display text-lg font-black text-ink">Not a Registered Member?</h3>
+                  <p className="text-xs text-ink/65 leading-relaxed font-semibold">
+                    This email is not registered in our society database. You must apply to join CODATOR before you can activate your account.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-2 text-xs font-bold">
+                  <Link
+                    href="/join"
+                    className="w-full rounded-xl bg-wisteria py-2.5 text-paper hover:bg-wisteria/90 transition-all text-center"
+                  >
+                    Apply for Membership
+                  </Link>
+                  <button
+                    onClick={() => setShowRegisterModal(false)}
+                    className="w-full rounded-xl border border-mist py-2.5 text-ink hover:bg-mist/30 transition-all cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

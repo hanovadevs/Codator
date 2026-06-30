@@ -176,8 +176,8 @@ function JoinFormContent() {
               </div>
 
               <h2 className="font-display text-2xl font-bold text-ink">Application Submitted!</h2>
-              <p className="mt-4 text-xs sm:text-sm text-ink/75 max-w-md mx-auto font-semibold">
-                Thank you for applying to CODATOR. Our team will review your details and send a confirmation email with your membership credentials shortly.
+              <p className="mt-4 text-xs sm:text-sm text-ink/75 max-w-md mx-auto font-semibold leading-relaxed">
+                Thank you for applying to CODATOR. Please wait <span className="text-wisteria font-bold">at least 24 hours</span> for our team to review your details. You will receive a confirmation email with your membership credentials shortly.
               </p>
               <div className="mt-8 border-t border-mist/60 pt-6 text-xs text-ink/50">
                 Application Status: <span className="font-mono font-bold text-wisteria bg-wisteria-tint px-2 py-0.5 rounded">PENDING REVIEW</span>

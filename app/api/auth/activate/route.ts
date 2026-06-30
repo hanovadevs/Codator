@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     if (!member) {
       return NextResponse.json(
-        { error: "This email is not registered in our society database. Please apply to join first." },
+        { error: "This email is not registered in our society database. Please apply to join first.", code: "NOT_REGISTERED" },
         { status: 400 }
       );
     }
