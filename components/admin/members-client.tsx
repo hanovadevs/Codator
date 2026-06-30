@@ -44,6 +44,24 @@ interface MembersClientProps {
   initialMembers: Member[];
 }
 
+interface MemberEventHistory {
+  registered_at: string;
+  checked_in_at: string | null;
+  events: {
+    id: string;
+    title: string;
+    category: string;
+    date_start: string;
+    location: string;
+  } | {
+    id: string;
+    title: string;
+    category: string;
+    date_start: string;
+    location: string;
+  }[] | null;
+}
+
 const POSITION_OPTIONS = [
   "Mentor",
   "President",
@@ -103,6 +121,39 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
 
   const supabase = createClient();
 
+  // Event History states
+  const [memberHistory, setMemberHistory] = useState<MemberEventHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const fetchMemberHistory = async (memberId: string) => {
+    setHistoryLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("event_registrations")
+        .select(`
+          registered_at,
+          checked_in_at,
+          events (
+            id,
+            title,
+            category,
+            date_start,
+            location
+          )
+        `)
+        .eq("member_id", memberId)
+        .order("registered_at", { ascending: false });
+
+      if (error) throw error;
+      setMemberHistory(data || []);
+    } catch (err) {
+      console.error("Error fetching member history:", err);
+      setMemberHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // Unique departments for filter dropdown
   const departments = Array.from(
     new Set(members.map((m) => m.department))
@@ -143,6 +194,7 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
       batch_year: member.batch_year,
     });
     setIsEditMode(false);
+    fetchMemberHistory(member.id);
   };
 
   // Submit manual member creation
@@ -192,9 +244,9 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
       });
       setIsAddOpen(false);
       alert(data.message);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert(err.message || "Error creating member.");
+      alert(err instanceof Error ? err.message : "Error creating member.");
     } finally {
       setActionLoading((prev) => ({ ...prev, addMember: false }));
     }
@@ -253,9 +305,9 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
       );
 
       setIsEditMode(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error saving edits:", err);
-      alert(err.message || "Failed to update member profile.");
+      alert(err instanceof Error ? err.message : "Failed to update member profile.");
     } finally {
       setActionLoading((prev) => ({ ...prev, [selectedMember.id]: false }));
     }
@@ -281,8 +333,8 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
       if (selectedMember && selectedMember.id === memberId) {
         setSelectedMember((prev) => prev ? { ...prev, status: "rejected" } : null);
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "An error occurred.");
     } finally {
       setActionLoading((prev) => ({ ...prev, [memberId]: false }));
     }
@@ -312,8 +364,8 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
           prev ? { ...prev, status: "active", codator_id: data.codatorId || prev.codator_id } : null
         );
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "An error occurred.");
     } finally {
       setActionLoading((prev) => ({ ...prev, [memberId]: false }));
     }
@@ -876,6 +928,45 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
                           ))
                         )}
                       </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="font-display text-2xs font-bold uppercase tracking-widest text-ink/40 border-b border-mist/50 pb-1">
+                        Event Attendance History
+                      </h4>
+                      {historyLoading ? (
+                        <div className="flex items-center gap-2 text-ink/50 py-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-wisteria" />
+                          <span>Loading event history...</span>
+                        </div>
+                      ) : memberHistory.length === 0 ? (
+                        <span className="text-xs text-ink/50 font-medium italic block py-2">{"No event registrations found"}</span>
+                      ) : (
+                        <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                          {memberHistory.map((reg) => {
+                            const event = Array.isArray(reg.events) ? reg.events[0] : reg.events;
+                            if (!event) return null;
+                            const isAttended = !!reg.checked_in_at;
+                            return (
+                              <div key={event.id} className="flex items-center justify-between p-2.5 bg-paper border border-mist/80 rounded-xl">
+                                <div className="max-w-[70%]">
+                                  <span className="block font-bold text-ink truncate">{event.title}</span>
+                                  <span className="text-5xs text-ink/50 mt-0.5 block">
+                                    {new Date(event.date_start).toLocaleDateString()} • {event.category}
+                                  </span>
+                                </div>
+                                <span className={`text-5xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                                  isAttended 
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                }`}>
+                                  {isAttended ? "Attended" : "Registered Only"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}

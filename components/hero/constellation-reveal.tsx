@@ -25,13 +25,20 @@ export default function ConstellationReveal() {
   useEffect(() => {
     // Check for reduced motion preference
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
+    
+    // Set initial value asynchronously to avoid cascading renders on mount
+    const rafId = requestAnimationFrame(() => {
+      setPrefersReducedMotion(mediaQuery.matches);
+    });
 
     const handleMediaChange = (e: MediaQueryListEvent) => {
       setPrefersReducedMotion(e.matches);
     };
     mediaQuery.addEventListener("change", handleMediaChange);
-    return () => mediaQuery.removeEventListener("change", handleMediaChange);
+    return () => {
+      cancelAnimationFrame(rafId);
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
   }, []);
 
   useEffect(() => {

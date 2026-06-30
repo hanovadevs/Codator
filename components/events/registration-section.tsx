@@ -45,8 +45,8 @@ export default function RegistrationSection({
       }
 
       setIsRegistered(true);
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred during registration.");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "An error occurred during registration.");
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +68,7 @@ export default function RegistrationSection({
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
           <CheckCircle2 className="h-6 w-6" />
         </div>
-        <h4 className="mt-3 font-display text-base font-bold text-emerald-950">You're Registered!</h4>
+        <h4 className="mt-3 font-display text-base font-bold text-emerald-950">{"You're Registered!"}</h4>
         <p className="mt-1 text-xs text-emerald-800/80 leading-relaxed">
           We have reserved your spot. Your virtual event pass is active. Remember to present your member pass QR code at check-in.
         </p>

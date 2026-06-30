@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, ArrowRight, User, Hash, GraduationCap, Mail, Phone, Code, Check } from "lucide-react";
@@ -39,14 +39,23 @@ function JoinFormContent() {
   const searchParams = useSearchParams();
   const initialPhylum = searchParams.get("phylum") || "";
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    rollNumber: "",
-    department: "", // Set in useEffect on mount to ensure searchParams are read
-    batchYear: "",
-    email: "",
-    phone: "",
-    whyJoin: "",
+  const [formData, setFormData] = useState(() => {
+    let initialDept = "";
+    if (initialPhylum) {
+      const decoded = decodeURIComponent(initialPhylum);
+      if (PHYLA_OPTIONS.includes(decoded)) {
+        initialDept = decoded;
+      }
+    }
+    return {
+      fullName: "",
+      rollNumber: "",
+      department: initialDept,
+      batchYear: "",
+      email: "",
+      phone: "",
+      whyJoin: "",
+    };
   });
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -54,17 +63,6 @@ function JoinFormContent() {
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  // Set the preselected phylum once on mount
-  useEffect(() => {
-    if (initialPhylum) {
-      // Match exactly or decode
-      const decoded = decodeURIComponent(initialPhylum);
-      if (PHYLA_OPTIONS.includes(decoded)) {
-        setFormData((prev) => ({ ...prev, department: decoded }));
-      }
-    }
-  }, [initialPhylum]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -135,8 +133,8 @@ function JoinFormContent() {
       }
 
       setIsSubmitted(true);
-    } catch (err: any) {
-      setSubmitError(err.message || "An unexpected error occurred. Please try again.");
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "An unexpected error occurred. Please try again.");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSubmitting(false);

@@ -46,9 +46,9 @@ export default function PortalLoginPage() {
       // Force a hard refresh to update the middleware state and redirect
       router.refresh();
       router.push("/portal");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Sign in error:", err);
-      setErrorMsg(err.message || "Failed to sign in. Please check your credentials.");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to sign in. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -95,9 +95,9 @@ export default function PortalLoginPage() {
       
       // Reset form
       setActivateForm({ email: "", password: "", confirmPassword: "" });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Activation error:", err);
-      setErrorMsg(err.message || "Failed to activate account.");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to activate account.");
     } finally {
       setIsLoading(false);
     }

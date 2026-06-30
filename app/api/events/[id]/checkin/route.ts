@@ -63,7 +63,7 @@ export async function POST(request: Request, { params }: CheckInParams) {
     // 5. Check if the member is registered for this event
     const { data: registration, error: regError } = await supabase
       .from("event_registrations")
-      .select("id, attended")
+      .select("id, checked_in_at")
       .eq("event_id", eventId)
       .eq("member_id", memberId)
       .maybeSingle();
@@ -81,8 +81,7 @@ export async function POST(request: Request, { params }: CheckInParams) {
           {
             event_id: eventId,
             member_id: memberId,
-            attended: true,
-            attended_at: new Date().toISOString(),
+            checked_in_at: new Date().toISOString(),
           },
         ]);
 
@@ -112,7 +111,7 @@ export async function POST(request: Request, { params }: CheckInParams) {
     }
 
     // 7. Handle case where member is already checked in
-    if (registration.attended) {
+    if (registration.checked_in_at) {
       return NextResponse.json({
         status: "ALREADY_CHECKED_IN",
         message: "Already checked in.",
@@ -125,8 +124,7 @@ export async function POST(request: Request, { params }: CheckInParams) {
     const { error: updateError } = await supabase
       .from("event_registrations")
       .update({
-        attended: true,
-        attended_at: new Date().toISOString(),
+        checked_in_at: new Date().toISOString(),
       })
       .eq("id", registration.id);
 

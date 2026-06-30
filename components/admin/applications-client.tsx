@@ -45,8 +45,8 @@ export default function ApplicationsClient({ initialApplications }: Applications
       // Remove from list
       setApplications(applications.filter((app) => app.id !== id));
       setSelectedApp(null);
-    } catch (err: any) {
-      setErrorMsg(err.message || "An error occurred.");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "An error occurred.");
     } finally {
       setIsActioning(false);
     }

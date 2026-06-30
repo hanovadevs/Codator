@@ -86,9 +86,9 @@ export default function AnnouncementsClient({ initialAnnouncements }: Announceme
 
       setNewForm({ title: "", category: "general", content: "" });
       setIsCreateOpen(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error creating announcement:", err);
-      alert(err.message || "Failed to post announcement.");
+      alert(err instanceof Error ? err.message : "Failed to post announcement.");
     } finally {
       setIsSubmitting(false);
     }
@@ -105,9 +105,9 @@ export default function AnnouncementsClient({ initialAnnouncements }: Announceme
       if (error) throw error;
 
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error deleting announcement:", err);
-      alert(err.message || "Failed to delete announcement.");
+      alert(err instanceof Error ? err.message : "Failed to delete announcement.");
     }
   };
 
@@ -247,7 +247,7 @@ export default function AnnouncementsClient({ initialAnnouncements }: Announceme
                     <label className="block text-ink/75 mb-1">Category *</label>
                     <select
                       value={newForm.category}
-                      onChange={(e) => setNewForm({ ...newForm, category: e.target.value as any })}
+                      onChange={(e) => setNewForm({ ...newForm, category: e.target.value as "general" | "event" | "urgent" | "opportunity" })}
                       className="w-full px-3 py-2 bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria font-semibold"
                     >
                       <option value="general">General Notice</option>

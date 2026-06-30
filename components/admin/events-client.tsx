@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion as m, AnimatePresence as AP } from "framer-motion";
-import { Calendar, MapPin, Users, Plus, X, Edit, Trash2, Globe, FileText, Check, Upload, Image as ImageIcon } from "lucide-react";
+import { Calendar, MapPin, Users, Plus, X, Edit, Trash2, Globe, FileText, Check, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
 
 interface Event {
   id: string;
@@ -22,6 +22,34 @@ interface Event {
 
 interface EventsClientProps {
   initialEvents: Event[];
+}
+
+interface EventRegistration {
+  id: string;
+  registered_at: string;
+  checked_in_at: string | null;
+  members: {
+    id: string;
+    full_name: string;
+    email: string;
+    codator_id: string | null;
+  } | {
+    id: string;
+    full_name: string;
+    email: string;
+    codator_id: string | null;
+  }[] | null;
+}
+
+interface ActiveMember {
+  id: string;
+  full_name: string;
+  email: string;
+  codator_id: string | null;
+}
+
+function generateRandomFileName(fileExt: string): string {
+  return `${Math.random().toString(36).substring(2)}.${fileExt}`;
 }
 
 export default function EventsClient({ initialEvents }: EventsClientProps) {
@@ -48,6 +76,134 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
   const [errorMsg, setErrorMsg] = useState("");
 
   const supabase = createClient();
+
+  // Registrations panel states
+  const [selectedEventForRegs, setSelectedEventForRegs] = useState<Event | null>(null);
+  const [registrationsList, setRegistrationsList] = useState<EventRegistration[]>([]);
+  const [regLoading, setRegLoading] = useState(false);
+  const [allActiveMembers, setAllActiveMembers] = useState<ActiveMember[]>([]);
+  const [searchMemberQuery, setSearchMemberQuery] = useState("");
+
+  const fetchEventRegistrations = async (eventId: string) => {
+    setRegLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("event_registrations")
+        .select(`
+          id,
+          registered_at,
+          checked_in_at,
+          members (
+            id,
+            full_name,
+            email,
+            codator_id
+          )
+        `)
+        .eq("event_id", eventId)
+        .order("registered_at", { ascending: false });
+
+      if (error) throw error;
+      setRegistrationsList(data || []);
+    } catch (err) {
+      console.error("Error fetching event registrations:", err);
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
+  const fetchActiveMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("members")
+        .select("id, full_name, email, codator_id")
+        .eq("status", "active")
+        .order("full_name", { ascending: true });
+
+      if (error) throw error;
+      setAllActiveMembers(data || []);
+    } catch (err) {
+      console.error("Error fetching active members:", err);
+    }
+  };
+
+  const handleToggleAttendance = async (regId: string, currentCheckedInAt: string | null) => {
+    const newCheckedInAt = currentCheckedInAt ? null : new Date().toISOString();
+    try {
+      const { error } = await supabase
+        .from("event_registrations")
+        .update({ checked_in_at: newCheckedInAt })
+        .eq("id", regId);
+
+      if (error) throw error;
+
+      setRegistrationsList((prev) =>
+        prev.map((reg) => (reg.id === regId ? { ...reg, checked_in_at: newCheckedInAt } : reg))
+      );
+    } catch (err) {
+      console.error("Error toggling attendance:", err);
+      alert("Failed to update attendance.");
+    }
+  };
+
+  const handleManualRegister = async (memberId: string) => {
+    if (!selectedEventForRegs) return;
+    try {
+      const { data, error } = await supabase
+        .from("event_registrations")
+        .insert([
+          {
+            event_id: selectedEventForRegs.id,
+            member_id: memberId,
+          },
+        ])
+        .select(`
+          id,
+          registered_at,
+          checked_in_at,
+          members (
+            id,
+            full_name,
+            email,
+            codator_id
+          )
+        `)
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          alert("This member is already registered.");
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      setRegistrationsList((prev) => [data as EventRegistration, ...prev]);
+      setSearchMemberQuery("");
+    } catch (err) {
+      console.error("Error manually registering member:", err);
+      alert("Failed to register member.");
+    }
+  };
+
+  const handleManualDeregister = async (regId: string) => {
+    if (!confirm("Are you sure you want to remove this registration?")) return;
+    try {
+      const { error } = await supabase.from("event_registrations").delete().eq("id", regId);
+      if (error) throw error;
+      setRegistrationsList((prev) => prev.filter((reg) => reg.id !== regId));
+    } catch (err) {
+      console.error("Error removing registration:", err);
+      alert("Failed to remove registration.");
+    }
+  };
+
+  const openRegistrations = (event: Event) => {
+    setSelectedEventForRegs(event);
+    fetchEventRegistrations(event.id);
+    fetchActiveMembers();
+  };
 
   // Helper to generate slug from title
   const handleTitleChange = (val: string) => {
@@ -102,8 +258,8 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
     setErrorMsg("");
 
     const file = files[0];
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const fileExt = file.name.split(".").pop() || "";
+    const fileName = generateRandomFileName(fileExt);
     const filePath = `banners/${fileName}`;
 
     try {
@@ -115,9 +271,9 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
 
       const { data } = supabase.storage.from("event-banners").getPublicUrl(filePath);
       setBannerUrl(data.publicUrl);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error uploading file:", err);
-      setErrorMsg(err.message || "Failed to upload image. Make sure the 'event-banners' bucket exists and is public.");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to upload image. Make sure the 'event-banners' bucket exists and is public.");
     } finally {
       setIsUploading(false);
     }
@@ -168,9 +324,9 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
         setEvents([data, ...events]);
       }
       setEditorOpen(false);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error saving event:", err);
-      setErrorMsg(err.message || "Failed to save event.");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to save event.");
     } finally {
       setIsSaving(false);
     }
@@ -184,9 +340,9 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
       if (error) throw error;
 
       setEvents(events.filter((ev) => ev.id !== id));
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error deleting event:", err);
-      alert(err.message || "Failed to delete event.");
+      alert(err instanceof Error ? err.message : "Failed to delete event.");
     }
   };
 
@@ -287,13 +443,20 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
               </div>
 
               {/* Action Bar */}
-              <div className="bg-paper/50 border-t border-mist px-5 py-3 flex justify-between items-center">
+              <div className="bg-paper/50 border-t border-mist px-5 py-3 flex justify-between items-center gap-2">
                 <button
                   onClick={() => openEditor(event)}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-ink/75 hover:text-wisteria transition-colors"
                 >
                   <Edit className="h-3.5 w-3.5" />
                   <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => openRegistrations(event)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-wisteria hover:underline transition-colors"
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  <span>Registrations</span>
                 </button>
                 <button
                   onClick={() => handleDelete(event.id)}
@@ -534,6 +697,159 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
                   </button>
                 </div>
               </form>
+            </m.div>
+          </>
+        )}
+      </AP>
+
+      {/* Slide-over Registrations Panel */}
+      <AP>
+        {selectedEventForRegs && (
+          <>
+            {/* Backdrop */}
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEventForRegs(null)}
+              className="fixed inset-0 z-40 bg-ink"
+            />
+
+            {/* Panel */}
+            <m.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 260 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-paper border-l border-mist p-6 sm:p-8 shadow-2xl flex flex-col justify-between"
+            >
+              <div className="flex flex-col h-full justify-between">
+                <div>
+                  <div className="flex items-center justify-between border-b border-mist pb-4 mb-6">
+                    <h2 className="font-display text-xl font-bold text-ink flex items-center gap-2">
+                      <Users className="h-5 w-5 text-wisteria" />
+                      <span>Registrations: {selectedEventForRegs.title}</span>
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEventForRegs(null)}
+                      className="rounded-lg p-1.5 text-ink/50 hover:bg-wisteria-tint hover:text-wisteria transition-colors cursor-pointer"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  {/* Add Member Registration Area */}
+                  <div className="mb-6 p-4 bg-wisteria-tint/15 border border-wisteria/10 rounded-2xl space-y-3">
+                    <h4 className="text-xs font-bold text-ink">Register Member On-the-spot</h4>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search active members by name..."
+                        value={searchMemberQuery}
+                        onChange={(e) => setSearchMemberQuery(e.target.value)}
+                        className="w-full px-3 py-2 text-xs font-semibold bg-paper border border-mist rounded-xl focus:outline-none focus:border-wisteria"
+                      />
+                      {searchMemberQuery && (
+                        <div className="absolute left-0 right-0 mt-1 max-h-40 overflow-y-auto bg-paper border border-mist rounded-xl shadow-lg z-50 divide-y divide-mist">
+                          {allActiveMembers
+                            .filter((m) =>
+                              m.full_name.toLowerCase().includes(searchMemberQuery.toLowerCase()) &&
+                              !registrationsList.some((reg) => {
+                                const regMember = Array.isArray(reg.members) ? reg.members[0] : reg.members;
+                                return regMember?.id === m.id;
+                              })
+                            )
+                            .slice(0, 5)
+                            .map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => handleManualRegister(m.id)}
+                                className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-wisteria-tint/10 flex justify-between items-center"
+                              >
+                                <span>{m.full_name} ({m.codator_id || "No ID"})</span>
+                                <span className="text-5xs text-wisteria font-bold">Register →</span>
+                              </button>
+                            ))}
+                          {allActiveMembers.filter((m) =>
+                            m.full_name.toLowerCase().includes(searchMemberQuery.toLowerCase()) &&
+                            !registrationsList.some((reg) => {
+                              const regMember = Array.isArray(reg.members) ? reg.members[0] : reg.members;
+                              return regMember?.id === m.id;
+                            })
+                          ).length === 0 && (
+                            <div className="px-3 py-2 text-xs text-ink/50 italic">No matching unregistered members found</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Registrations List */}
+                  <h4 className="text-xs font-bold text-ink mb-3">Registered Members ({registrationsList.length})</h4>
+                  <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-1.5">
+                    {regLoading ? (
+                      <div className="flex items-center gap-2 text-ink/50 py-10 justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-wisteria" />
+                        <span>Loading registrations...</span>
+                      </div>
+                    ) : registrationsList.length === 0 ? (
+                      <div className="text-center py-10 text-xs text-ink/50 italic">
+                        No registrations logged for this event.
+                      </div>
+                    ) : (
+                      registrationsList.map((reg) => {
+                        const member = Array.isArray(reg.members) ? reg.members[0] : reg.members;
+                        if (!member) return null;
+                        const isCheckedIn = !!reg.checked_in_at;
+
+                        return (
+                          <div key={reg.id} className="flex items-center justify-between p-3 bg-paper border border-mist/80 rounded-2xl hover:border-wisteria/30 transition-colors">
+                            <div className="max-w-[60%]">
+                              <span className="block font-bold text-ink truncate">{member.full_name}</span>
+                              <span className="block text-5xs text-ink/50 font-mono mt-0.5">{member.codator_id || "NO ID"} • {member.email}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAttendance(reg.id, reg.checked_in_at)}
+                                className={`text-5xs font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                                  isCheckedIn
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                    : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                }`}
+                              >
+                                {isCheckedIn ? "Checked In" : "Check In"}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleManualDeregister(reg.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100 transition-all cursor-pointer"
+                                title="Remove registration"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-mist pt-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEventForRegs(null)}
+                    className="w-full rounded-xl border border-mist py-2.5 text-xs font-bold text-ink hover:bg-mist/30 transition-colors cursor-pointer text-center"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </m.div>
           </>
         )}

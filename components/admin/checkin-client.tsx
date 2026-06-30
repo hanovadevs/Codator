@@ -86,14 +86,14 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         onScanSuccess,
         onScanFailure
       );
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to start scanner:", err);
-      setErrorMsg(err.message || "Failed to start camera stream.");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to start camera stream.");
       setIsScanning(false);
     }
   };
 
-  const stopScanner = async () => {
+  async function stopScanner() {
     if (qrCodeInstance.current && qrCodeInstance.current.isScanning) {
       try {
         await qrCodeInstance.current.stop();
@@ -102,7 +102,7 @@ export default function CheckInClient({ event }: CheckInClientProps) {
       }
     }
     setIsScanning(false);
-  };
+  }
 
   const onScanSuccess = async (decodedText: string) => {
     // Pause scanning by stopping the scanner upon successful decode
@@ -150,17 +150,17 @@ export default function CheckInClient({ event }: CheckInClientProps) {
           memberCodatorId: data.memberCodatorId,
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       setScanResult({
         status: "ERROR",
-        message: err.message || "Failed to verify pass.",
+        message: err instanceof Error ? err.message : "Failed to verify pass.",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const onScanFailure = (error: any) => {
+  const onScanFailure = () => {
     // Silently ignore scan failures (e.g. frames without QR codes)
   };
 
@@ -194,10 +194,10 @@ export default function CheckInClient({ event }: CheckInClientProps) {
         memberName: data.memberName,
         memberCodatorId: data.memberCodatorId,
       });
-    } catch (err: any) {
+    } catch (err) {
       setScanResult({
         status: "ERROR",
-        message: err.message || "Failed to override registration.",
+        message: err instanceof Error ? err.message : "Failed to override registration.",
       });
     } finally {
       setIsLoading(false);

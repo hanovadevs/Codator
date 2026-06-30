@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Users, ClipboardList, Calendar, MapPin, ArrowRight, UserPlus, ShieldCheck } from "lucide-react";
+import { Users, ClipboardList, Calendar, MapPin, ArrowRight, UserPlus, ShieldCheck, Clock, Zap } from "lucide-react";
 
 export const revalidate = 0; // Always fetch fresh data for admin overview
 
@@ -62,6 +62,37 @@ export default async function AdminOverviewPage() {
     }))
     .sort((a, b) => b.count - a.count);
 
+  // 7. Fetch 5 most recent check-ins
+  const { data: recentCheckIns } = await supabase
+    .from("event_registrations")
+    .select(`
+      checked_in_at,
+      members (
+        full_name,
+        codator_id
+      ),
+      events (
+        title
+      )
+    `)
+    .not("checked_in_at", "is", null)
+    .order("checked_in_at", { ascending: false })
+    .limit(5);
+
+  // 8. Calculate attendance rate
+  const { count: totalRegistrations } = await supabase
+    .from("event_registrations")
+    .select("*", { count: "exact", head: true });
+
+  const { count: totalAttended } = await supabase
+    .from("event_registrations")
+    .select("*", { count: "exact", head: true })
+    .not("checked_in_at", "is", null);
+
+  const attendanceRate = totalRegistrations && totalRegistrations > 0
+    ? Math.round(((totalAttended || 0) / totalRegistrations) * 100)
+    : 0;
+
   return (
     <div className="space-y-8 text-ink">
       <div>
@@ -70,7 +101,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* 1. METRICS GRID */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {/* Pending Applications Card */}
         <div className="border border-mist rounded-2xl p-6 bg-white/50 backdrop-blur-xs shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
           <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-wisteria/5 translate-x-6 -translate-y-6 group-hover:scale-110 transition-transform" />
@@ -125,6 +156,24 @@ export default async function AdminOverviewPage() {
               <span>Manage events</span>
               <ArrowRight className="h-3 w-3" />
             </Link>
+          </div>
+        </div>
+
+        {/* Attendance Rate Card */}
+        <div className="border border-mist rounded-2xl p-6 bg-white/50 backdrop-blur-xs shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 h-24 w-24 rounded-full bg-emerald-500/5 translate-x-6 -translate-y-6 group-hover:scale-110 transition-transform" />
+          <div className="flex items-center justify-between">
+            <h3 className="text-4xs font-bold text-ink/50 uppercase tracking-widest">Attendance Rate</h3>
+            <span className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+          </div>
+          <p className="text-3xl font-display font-black text-ink mt-4">{attendanceRate}%</p>
+          <div className="mt-4 pt-3 border-t border-mist/50 flex justify-between items-center text-4xs font-semibold">
+            <span className="text-ink/60">{totalAttended || 0} of {totalRegistrations || 0} attended</span>
+            <span className="text-emerald-600 flex items-center gap-0.5 font-bold">
+              <span>Live stats</span>
+            </span>
           </div>
         </div>
       </div>
@@ -226,7 +275,110 @@ export default async function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* 3. DEPARTMENT DISTRIBUTION */}
+      {/* 3. LIVE OPERATIONS & QUICK ACTIONS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Recent Check-Ins Live Feed (2 cols) */}
+        <div className="lg:col-span-2 border border-mist rounded-3xl bg-white/40 p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-mist/60 pb-4 mb-5">
+              <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+                <Clock className="h-4.5 w-4.5 text-wisteria" />
+                <span>Live Event Check-In Feed</span>
+              </h3>
+              <span className="text-5xs font-bold uppercase tracking-wider text-ink/40">
+                Real-time
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {!recentCheckIns || recentCheckIns.length === 0 ? (
+                <div className="text-center py-10 text-xs text-ink/50 font-medium">
+                  No check-ins logged yet.
+                </div>
+              ) : (
+                recentCheckIns.map((reg, idx) => {
+                  const member = Array.isArray(reg.members) ? reg.members[0] : reg.members;
+                  const event = Array.isArray(reg.events) ? reg.events[0] : reg.events;
+                  if (!member || !event) return null;
+
+                  return (
+                    <div key={idx} className="flex items-center justify-between bg-paper/50 border border-mist/50 rounded-xl p-3.5 hover:bg-paper transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center justify-center font-bold text-xs">
+                          ✓
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-ink leading-tight">
+                            {member.full_name} <span className="text-4xs font-mono text-ink/40 font-normal">({member.codator_id})</span>
+                          </h4>
+                          <span className="text-5xs font-medium text-ink/50 block mt-0.5">
+                            Checked into <span className="font-semibold text-wisteria">{event.title}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-5xs font-semibold text-ink/40">
+                        {new Date(reg.checked_in_at).toLocaleTimeString(undefined, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions Panel (1 col) */}
+        <div className="border border-mist rounded-3xl bg-white/40 p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-mist/60 pb-4 mb-5">
+              <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+                <Zap className="h-4.5 w-4.5 text-wisteria" />
+                <span>Quick Admin Actions</span>
+              </h3>
+            </div>
+
+            <div className="grid gap-3">
+              <Link
+                href="/admin/events"
+                className="flex items-center justify-between p-3.5 bg-paper/60 hover:bg-wisteria-tint/20 border border-mist/80 rounded-2xl transition-all group"
+              >
+                <div className="text-left">
+                  <span className="block text-xs font-bold text-ink">Create New Event</span>
+                  <span className="block text-5xs text-ink/50 mt-0.5">Publish hackathons, workshops, or socials.</span>
+                </div>
+                <ArrowRight className="h-4 w-4 text-ink/30 group-hover:text-wisteria transition-colors group-hover:translate-x-0.5 duration-300" />
+              </Link>
+
+              <Link
+                href="/admin/applications"
+                className="flex items-center justify-between p-3.5 bg-paper/60 hover:bg-wisteria-tint/20 border border-mist/80 rounded-2xl transition-all group"
+              >
+                <div className="text-left">
+                  <span className="block text-xs font-bold text-ink">Review Pending Applications</span>
+                  <span className="block text-5xs text-ink/50 mt-0.5">Approve or reject new society applicants.</span>
+                </div>
+                <ArrowRight className="h-4 w-4 text-ink/30 group-hover:text-wisteria transition-colors group-hover:translate-x-0.5 duration-300" />
+              </Link>
+
+              <Link
+                href="/admin/announcements"
+                className="flex items-center justify-between p-3.5 bg-paper/60 hover:bg-wisteria-tint/20 border border-mist/80 rounded-2xl transition-all group"
+              >
+                <div className="text-left">
+                  <span className="block text-xs font-bold text-ink">Send Member Broadcast</span>
+                  <span className="block text-5xs text-ink/50 mt-0.5">Email all active members with updates.</span>
+                </div>
+                <ArrowRight className="h-4 w-4 text-ink/30 group-hover:text-wisteria transition-colors group-hover:translate-x-0.5 duration-300" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. DEPARTMENT DISTRIBUTION */}
       {totalActive > 0 && deptDistribution.length > 0 && (
         <div className="border border-mist rounded-3xl bg-white/40 p-6 shadow-xs">
           <h3 className="font-display text-base font-bold text-ink flex items-center gap-2 border-b border-mist/60 pb-4 mb-5">

@@ -249,7 +249,7 @@ export default async function PortalDashboardPage() {
         <div className="border border-mist rounded-2xl bg-paper/30 p-6 space-y-6">
           <h3 className="font-display text-lg font-bold border-b border-mist pb-3 flex items-center gap-2">
             <Calendar className="h-4.5 w-4.5 text-wisteria" />
-            What's Coming Up
+            {"What's Coming Up"}
           </h3>
 
           {upcomingEvents && upcomingEvents.length > 0 ? (

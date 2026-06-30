@@ -22,8 +22,12 @@ export async function POST(request: Request) {
     } = body;
 
     // 1. Validate required fields
-    if (!full_name || !university_roll || !department || !batch_year || !email || !position) {
+    if (!full_name || !university_roll || !batch_year || !email || !position) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+    }
+
+    if (["Director", "Head", "Co-Head", "Member"].includes(position) && !department) {
+      return NextResponse.json({ error: "Department is required for this position." }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
         id: memberId,
         full_name,
         university_roll,
-        department,
+        department: department || "",
         batch_year,
         email,
         phone: phone || null,

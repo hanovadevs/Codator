@@ -33,8 +33,8 @@ export default function AdminLoginPage() {
       // Refresh the page state and route to admin panel
       router.refresh();
       router.push("/admin");
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to log in. Please check your credentials.");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to log in. Please check your credentials.");
       setIsLoading(false);
     }
   };

@@ -72,7 +72,7 @@ export default async function PortalEventsPage() {
         <div className="border border-dashed border-mist rounded-2xl p-16 text-center text-ink/50 bg-paper/30 max-w-xl mx-auto">
           <Calendar className="mx-auto h-12 w-12 text-ink/30 mb-4" />
           <h3 className="font-display text-lg font-bold text-ink">No registrations yet</h3>
-          <p className="text-sm text-ink/50 mt-1 mb-6">You haven't registered for any society events yet.</p>
+          <p className="text-sm text-ink/50 mt-1 mb-6">{"You haven't registered for any society events yet."}</p>
           <Link
             href="/events"
             className="inline-flex items-center gap-1.5 rounded-lg bg-wisteria px-4 py-2 text-sm font-semibold text-paper hover:bg-wisteria/90 transition-colors cursor-pointer"
@@ -83,8 +83,8 @@ export default async function PortalEventsPage() {
         </div>
       ) : (
         <div className="max-w-4xl space-y-4">
-          {registrations.map((reg: any) => {
-            const event = reg.events;
+          {registrations.map((reg) => {
+            const event = Array.isArray(reg.events) ? reg.events[0] : reg.events;
             if (!event) return null;
 
             return (
