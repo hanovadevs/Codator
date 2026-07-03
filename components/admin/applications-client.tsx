@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion as m, AnimatePresence as AP } from "framer-motion";
-import { FileText, Calendar, User, Mail, GraduationCap, X, Check, Trash2, ArrowRight } from "lucide-react";
+import { FileText, Calendar, User, Mail, GraduationCap, X, Check, Trash2, ArrowRight, Loader2, AlertTriangle } from "lucide-react";
 
 interface Member {
   id: string;
@@ -19,13 +19,78 @@ interface Member {
 
 interface ApplicationsClientProps {
   initialApplications: Member[];
+  totalCount?: number;
 }
 
-export default function ApplicationsClient({ initialApplications }: ApplicationsClientProps) {
+export default function ApplicationsClient({ initialApplications, totalCount }: ApplicationsClientProps) {
   const [applications, setApplications] = useState<Member[]>(initialApplications);
   const [selectedApp, setSelectedApp] = useState<Member | null>(null);
   const [isActioning, setIsActioning] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false);
+  const [bulkPattern, setBulkPattern] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
+
+  const displayCount = totalCount && totalCount > applications.length ? totalCount : applications.length;
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    setIsDeletingSelected(true);
+    setErrorMsg("");
+    try {
+      const response = await fetch("/api/admin/members/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberIds: selectedIds }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to delete.");
+      setApplications((prev) => prev.filter((app) => !selectedIds.includes(app.id)));
+      setSelectedIds([]);
+      setSelectedApp(null);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setIsDeletingSelected(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    setErrorMsg("");
+    try {
+      const payload: { action: string; pattern?: string } = bulkPattern
+        ? { action: "delete_by_pattern", pattern: bulkPattern }
+        : { action: "delete_all" };
+
+      const response = await fetch("/api/admin/applications/bulk-action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to delete applications.");
+
+      // Remove matching applications from local state
+      if (bulkPattern) {
+        setApplications((prev) =>
+          prev.filter((app) => !app.email.toLowerCase().includes(bulkPattern.toLowerCase()))
+        );
+      } else {
+        setApplications([]);
+      }
+      setShowBulkConfirm(false);
+      setBulkPattern("");
+      setSelectedApp(null);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
 
   const handleAction = async (id: string, action: "approve" | "reject") => {
     setIsActioning(true);
@@ -64,14 +129,111 @@ export default function ApplicationsClient({ initialApplications }: Applications
 
   return (
     <div className="relative">
-      <div className="flex flex-col gap-1 mb-8">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
-          Membership Applications
-        </h1>
-        <p className="text-sm text-ink/65">
-          You have <span className="font-semibold text-wisteria">{applications.length}</span> pending applications to review.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
+            Membership Applications
+          </h1>
+          <p className="text-sm text-ink/65">
+            You have <span className="font-semibold text-wisteria">{displayCount}</span> pending applications to review.
+            {totalCount && totalCount > applications.length && (
+              <span className="text-5xs text-ink/40 ml-1">(showing {applications.length})</span>
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              disabled={isDeletingSelected}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-xs cursor-pointer active:scale-[0.98] disabled:opacity-50"
+            >
+              {isDeletingSelected ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              <span>Delete Selected ({selectedIds.length})</span>
+            </button>
+          )}
+          {applications.length > 0 && (
+            <button
+              onClick={() => setShowBulkConfirm(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Reject All Spam ({displayCount})</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Bulk Delete Confirmation Modal */}
+      <AP>
+        {showBulkConfirm && (
+          <>
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowBulkConfirm(false)}
+              className="fixed inset-0 z-40 bg-ink"
+            />
+            <m.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white rounded-2xl border border-mist shadow-lg max-w-md w-full p-8 space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-600 border border-red-200">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-black text-[#1D1B26]">Delete Spam Applications</h3>
+                    <p className="text-5xs text-ink/50 font-semibold">This action cannot be undone.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs text-ink/70 font-medium leading-relaxed">
+                    This will permanently delete <span className="font-bold text-red-600">{applications.length}</span> pending applications. Optionally, filter by email domain to target specific spam:
+                  </p>
+                  <input
+                    type="text"
+                    value={bulkPattern}
+                    onChange={(e) => setBulkPattern(e.target.value)}
+                    placeholder="e.g. testuniversity.edu (leave empty to delete all)"
+                    className="w-full px-3 py-2 text-xs font-semibold bg-paper border border-mist rounded-xl focus:outline-none focus:border-red-400 placeholder:text-ink/35"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { setShowBulkConfirm(false); setBulkPattern(""); }}
+                    className="flex-1 rounded-xl border border-mist py-2.5 text-xs font-bold text-ink hover:bg-mist/30 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={isBulkDeleting}
+                    className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white hover:bg-red-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isBulkDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4" />
+                        <span>Delete {bulkPattern ? "Matching" : "All"} Applications</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </m.div>
+          </>
+        )}
+      </AP>
 
       {errorMsg && (
         <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm font-semibold text-red-800 border border-red-200">
@@ -92,6 +254,20 @@ export default function ApplicationsClient({ initialApplications }: Applications
             <table className="min-w-full divide-y divide-mist text-left text-sm">
               <thead className="bg-paper/80 font-semibold text-ink/80">
                 <tr>
+                  <th className="px-4 py-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={applications.length > 0 && selectedIds.length === applications.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds(applications.map((a) => a.id));
+                        } else {
+                          setSelectedIds([]);
+                        }
+                      }}
+                      className="rounded border-mist text-wisteria focus:ring-wisteria cursor-pointer h-3.5 w-3.5"
+                    />
+                  </th>
                   <th className="px-6 py-4">Applicant</th>
                   <th className="px-6 py-4">Department</th>
                   <th className="px-6 py-4">Roll Number</th>
@@ -106,6 +282,20 @@ export default function ApplicationsClient({ initialApplications }: Applications
                     onClick={() => setSelectedApp(app)}
                     className="hover:bg-wisteria-tint/15 transition-colors cursor-pointer group"
                   >
+                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(app.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedIds((prev) => [...prev, app.id]);
+                          } else {
+                            setSelectedIds((prev) => prev.filter((id) => id !== app.id));
+                          }
+                        }}
+                        className="rounded border-mist text-wisteria focus:ring-wisteria cursor-pointer h-3.5 w-3.5"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-ink group-hover:text-wisteria transition-colors">
                         {app.full_name}

@@ -6,12 +6,13 @@ export const revalidate = 0; // Disable caching so the admin always sees fresh d
 export default async function AdminApplicationsPage() {
   const supabase = await createClient();
 
-  // Fetch pending applications
-  const { data: applications, error } = await supabase
+  // Fetch pending applications with an increased range (default Supabase limit is 1000)
+  const { data: applications, error, count } = await supabase
     .from("members")
-    .select("id, full_name, university_roll, department, batch_year, email, phone, why_join, skills, applied_at")
+    .select("id, full_name, university_roll, department, batch_year, email, phone, why_join, skills, applied_at", { count: "exact" })
     .eq("status", "pending")
-    .order("applied_at", { ascending: false });
+    .order("applied_at", { ascending: false })
+    .range(0, 999); // Show up to 1000 at a time, with total count available
 
   if (error) {
     console.error("Error fetching applications:", error);
@@ -29,5 +30,5 @@ export default async function AdminApplicationsPage() {
     skills: app.skills || [],
   }));
 
-  return <ApplicationsClient initialApplications={formattedApplications} />;
+  return <ApplicationsClient initialApplications={formattedApplications} totalCount={count || formattedApplications.length} />;
 }

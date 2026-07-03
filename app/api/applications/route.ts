@@ -1,8 +1,33 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+// Rate limit: 3 applications per IP per 15 minutes
+const MAX_APPLICATIONS = 3;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 export async function POST(request: Request) {
   try {
+    // 0. Rate Limiting — check BEFORE parsing body
+    const clientIp = getClientIp(request);
+    const rateCheck = checkRateLimit(`app:${clientIp}`, MAX_APPLICATIONS, WINDOW_MS);
+
+    if (!rateCheck.allowed) {
+      const retryAfterSeconds = Math.ceil((rateCheck.resetAt - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: "Too many applications submitted. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(retryAfterSeconds),
+            "X-RateLimit-Limit": String(MAX_APPLICATIONS),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(rateCheck.resetAt),
+          },
+        }
+      );
+    }
+
     const body = await request.json();
     const { fullName, rollNumber, department, batchYear, email, phone, whyJoin, skills } = body;
 
@@ -14,7 +39,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Email domain validation
+    // 2. Input length validation (anti-spam)
+    if (fullName.length > 100 || rollNumber.length > 30 || email.length > 100 || (whyJoin && whyJoin.length > 1000)) {
+      return NextResponse.json(
+        { error: "Input exceeds maximum allowed length." },
+        { status: 400 }
+      );
+    }
+
+    // 3. Email domain validation
     if (!email.toLowerCase().endsWith(".edu") && !email.toLowerCase().includes(".edu.")) {
       return NextResponse.json(
         { error: "Please use your official university email (ending in .edu)." },
@@ -22,21 +55,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Initialize Supabase Client
+    // 4. Initialize Supabase Client
     const supabase = await createClient();
 
-    // 4. Insert application as pending member
+    // 5. Insert application as pending member
     const { error } = await supabase
       .from("members")
       .insert([
         {
-          full_name: fullName,
-          university_roll: rollNumber,
+          full_name: fullName.trim(),
+          university_roll: rollNumber.trim(),
           department: department,
           batch_year: batchYear,
           email: email.toLowerCase().trim(),
           phone: phone ? phone.trim() : null,
-          why_join: whyJoin,
+          why_join: whyJoin.trim(),
           skills: skills || [],
           status: "pending",
           role: "member",
@@ -61,7 +94,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { message: "Application submitted successfully." },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "X-RateLimit-Remaining": String(rateCheck.remaining),
+        },
+      }
     );
   } catch (error) {
     console.error("API error in /api/applications:", error);

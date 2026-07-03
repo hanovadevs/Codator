@@ -20,6 +20,8 @@ import {
   Edit2,
   Save,
   Award,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 interface Member {
@@ -83,6 +85,19 @@ const DEPARTMENT_OPTIONS = [
   "Research Phylum",
   "Event management",
 ];
+
+const cleanPositionString = (pos: string | null | undefined): string => {
+  if (!pos) return "Member";
+  let clean = pos
+    .replace(/::\w+/g, "") // Remove ::text
+    .replace(/'/g, "")     // Remove single quotes
+    .replace(/"/g, "")     // Remove double quotes
+    .trim();
+  if (!clean || clean.toLowerCase() === "member") {
+    return "Member";
+  }
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+};
 
 
 export default function MembersClient({ initialMembers }: MembersClientProps) {
@@ -224,12 +239,39 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
     new Set(members.map((m) => m.department))
   ).filter(Boolean);
 
+  // Bulk delete members
+  const [isDeletingMembers, setIsDeletingMembers] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteSelectedMembers = async () => {
+    if (selectedMemberIds.length === 0) return;
+    setIsDeletingMembers(true);
+    try {
+      const response = await fetch("/api/admin/members/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberIds: selectedMemberIds }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to delete members.");
+      setMembers((prev) => prev.filter((m) => !selectedMemberIds.includes(m.id)));
+      setSelectedMemberIds([]);
+      setSelectedMember(null);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setIsDeletingMembers(false);
+    }
+  };
+
   // Helper to format display position (e.g. "Director of Tech and Devolpment")
   const getDisplayPosition = (m: Member) => {
-    if (["Director", "Head", "Co-Head"].includes(m.position) && m.department) {
-      return `${m.position} of ${m.department}`;
+    const cleanPos = cleanPositionString(m.position);
+    if (["Director", "Head", "Co-Head"].includes(cleanPos) && m.department) {
+      return `${cleanPos} of ${m.department}`;
     }
-    return m.position;
+    return cleanPos;
   };
 
   // Filter members list
@@ -253,7 +295,7 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
   const handleOpenDetails = (member: Member) => {
     setSelectedMember(member);
     setEditForm({
-      position: member.position,
+      position: cleanPositionString(member.position),
       role: member.role,
       department: member.department,
       batch_year: member.batch_year,
@@ -446,16 +488,25 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
         </div>
         <div className="flex items-center gap-3 self-start sm:self-auto">
           {selectedMemberIds.length > 0 && (
-            <button
-              onClick={() => {
-                setEmailType("custom");
-                setIsEmailOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-skyline/10 border border-skyline/20 px-4 py-2.5 text-xs font-bold text-skyline hover:bg-skyline hover:text-white transition-all shadow-xs cursor-pointer active:scale-[0.98]"
-            >
-              <Mail className="h-4 w-4" />
-              <span>Send Email ({selectedMemberIds.length})</span>
-            </button>
+            <>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs font-bold text-red-700 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete ({selectedMemberIds.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEmailType("custom");
+                  setIsEmailOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-skyline/10 border border-skyline/20 px-4 py-2.5 text-xs font-bold text-skyline hover:bg-skyline hover:text-white transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+              >
+                <Mail className="h-4 w-4" />
+                <span>Send Email ({selectedMemberIds.length})</span>
+              </button>
+            </>
           )}
           <button
             onClick={() => setIsAddOpen(true)}
@@ -467,7 +518,67 @@ export default function MembersClient({ initialMembers }: MembersClientProps) {
         </div>
       </div>
 
-      {/* Filters Bar */}
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(false)}
+              className="fixed inset-0 z-40 bg-ink"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white rounded-2xl border border-mist shadow-lg max-w-md w-full p-8 space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-red-600 border border-red-200">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-black text-[#1D1B26]">Delete Members</h3>
+                    <p className="text-5xs text-ink/50 font-semibold">This action cannot be undone.</p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-ink/70 font-medium leading-relaxed">
+                  You are about to permanently delete <span className="font-bold text-red-600">{selectedMemberIds.length}</span> member(s) and all their associated event registrations. This cannot be undone.
+                </p>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 rounded-xl border border-mist py-2.5 text-xs font-bold text-ink hover:bg-mist/30 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteSelectedMembers}
+                    disabled={isDeletingMembers}
+                    className="flex-1 rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white hover:bg-red-700 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isDeletingMembers ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4" />
+                        <span>Delete {selectedMemberIds.length} Member(s)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white/40 border border-mist/80 rounded-2xl p-4">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-ink/45" />
