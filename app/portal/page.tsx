@@ -89,10 +89,22 @@ export default async function PortalDashboardPage() {
 
   // Helper to format society position display
   const getDisplayPosition = (pos: string, dept: string) => {
-    if (["Director", "Head", "Co-Head"].includes(pos)) {
-      return `${pos} of ${dept}`;
+    if (!pos) return "Member";
+    let clean = pos
+      .replace(/::\w+/g, "") // Remove ::text
+      .replace(/'/g, "")     // Remove single quotes
+      .replace(/"/g, "")     // Remove double quotes
+      .trim();
+    if (!clean || clean.toLowerCase() === "member") {
+      clean = "Member";
+    } else {
+      clean = clean.charAt(0).toUpperCase() + clean.slice(1);
     }
-    return pos || "Member";
+
+    if (["Director", "Head", "Co-Head"].includes(clean)) {
+      return `${clean} of ${dept}`;
+    }
+    return clean;
   };
 
   // Gamification Calculations
