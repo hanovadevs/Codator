@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin, Sparkles, Lightbulb, Code, Rocket } from "lucide-react";
 import ConstellationReveal from "@/components/hero/constellation-reveal";
+import { createClient } from "@/lib/supabase/client";
 
 const activities = [
   {
@@ -84,34 +86,41 @@ const phyla = [
   },
 ];
 
-const mockEvents = [
-  {
-    title: "Shatter The Code '26 Hackathon",
-    category: "Hackathon",
-    date: "July 18-19, 2026",
-    location: "CS Main Auditorium & Labs",
-    spotsLeft: 12,
-    badgeColor: "bg-ember/10 text-ember border-ember/20",
-  },
-  {
-    title: "Rust for Systems Programming",
-    category: "Workshop",
-    date: "July 25, 2026",
-    location: "Lab 3, Department of CE",
-    spotsLeft: 25,
-    badgeColor: "bg-wisteria/10 text-wisteria border-wisteria/20",
-  },
-  {
-    title: "Demystifying Distributed Systems",
-    category: "Seminar",
-    date: "August 02, 2026",
-    location: "Online (Discord Live)",
-    spotsLeft: 80,
-    badgeColor: "bg-skyline/10 text-skyline border-skyline/20",
-  },
-];
-
 export default function HomePage() {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadEvents() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("events")
+          .select("*")
+          .eq("is_published", true)
+          .order("date_start", { ascending: true })
+          .limit(3);
+        if (error) throw error;
+        setEvents(data || []);
+      } catch (err) {
+        console.error("Error loading events for homepage:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadEvents();
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   // Framer Motion variants
   const containerVars = {
     hidden: {},
@@ -577,77 +586,106 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {mockEvents.map((event, idx) => {
-              // Theme-based styles based on event category
-              let themeClasses = {
-                hover: "hover:shadow-[0_15px_40px_rgba(142,132,173,0.08)] hover:border-wisteria/35",
-                tag: "bg-wisteria/5 text-wisteria border-wisteria/20",
-                dot: "bg-wisteria",
-                btn: "bg-wisteria-tint/65 text-wisteria hover:bg-wisteria hover:text-white hover:shadow-md hover:shadow-wisteria/10",
-              };
-
-              if (event.category === "Hackathon") {
-                themeClasses = {
-                  hover: "hover:shadow-[0_15px_40px_rgba(224,122,95,0.08)] hover:border-ember/35",
-                  tag: "bg-ember/5 text-ember border-ember/20",
-                  dot: "bg-ember",
-                  btn: "bg-ember/10 text-ember hover:bg-ember hover:text-white hover:shadow-md hover:shadow-ember/10",
-                };
-              } else if (event.category === "Seminar") {
-                themeClasses = {
-                  hover: "hover:shadow-[0_15px_40px_rgba(96,150,186,0.08)] hover:border-skyline/35",
-                  tag: "bg-skyline/5 text-skyline border-skyline/20",
-                  dot: "bg-skyline",
-                  btn: "bg-skyline/10 text-skyline hover:bg-skyline hover:text-white hover:shadow-md hover:shadow-skyline/10",
-                };
-              }
-
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: idx * 0.08 }}
-                  className={`flex flex-col justify-between rounded-2xl border border-white/80 bg-white/35 backdrop-blur-md p-5 shadow-xs ${themeClasses.hover} transition-all duration-300 hover:-translate-y-0.5`}
+            {loading ? (
+              // Skeleton loaders
+              [1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="animate-pulse flex flex-col justify-between rounded-2xl border border-white/80 bg-white/20 backdrop-blur-md p-5 shadow-xs h-64"
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-3.5">
-                      {/* Tag with dot */}
-                      <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-5xs font-bold uppercase tracking-wider border ${themeClasses.tag}`}>
-                        <span className={`h-1 w-1 rounded-full ${themeClasses.dot}`} />
-                        {event.category}
-                      </span>
-                      <span className="text-5xs font-mono text-ink/45 font-bold">
-                        {event.spotsLeft} spots left
-                      </span>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="h-4 bg-ink/10 rounded w-16" />
+                      <div className="h-4 bg-ink/10 rounded w-20" />
                     </div>
-                    <h3 className="font-display text-sm font-bold text-ink leading-snug mb-3 group-hover:text-wisteria transition-colors">
-                      {event.title}
-                    </h3>
-                    <div className="space-y-2 text-5xs text-ink/65 font-semibold">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-3.5 w-3.5 text-ink/45" />
-                        <span>{event.date}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-ink/45" />
-                        <span>{event.location}</span>
-                      </div>
+                    <div className="h-6 bg-ink/10 rounded w-3/4" />
+                    <div className="space-y-2">
+                      <div className="h-3 bg-ink/10 rounded w-1/2" />
+                      <div className="h-3 bg-ink/10 rounded w-2/3" />
                     </div>
                   </div>
-                  
-                  <div className="mt-5 border-t border-mist/30 pt-4">
-                    <Link
-                      href={`/events`}
-                      className={`inline-flex w-full items-center justify-center rounded-lg py-2.5 text-5xs font-bold transition-all duration-350 active:scale-[0.98] ${themeClasses.btn}`}
-                    >
-                      Details & Register
-                    </Link>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  <div className="h-10 bg-ink/10 rounded-lg w-full mt-4" />
+                </div>
+              ))
+            ) : events.length > 0 ? (
+              events.map((event, idx) => {
+                // Theme-based styles based on event category
+                let themeClasses = {
+                  hover: "hover:shadow-[0_15px_40px_rgba(142,132,173,0.08)] hover:border-wisteria/35",
+                  tag: "bg-wisteria/5 text-wisteria border-wisteria/20",
+                  dot: "bg-wisteria",
+                  btn: "bg-wisteria-tint/65 text-wisteria hover:bg-wisteria hover:text-white hover:shadow-md hover:shadow-wisteria/10",
+                };
+
+                if (event.category === "Hackathon") {
+                  themeClasses = {
+                    hover: "hover:shadow-[0_15px_40px_rgba(224,122,95,0.08)] hover:border-ember/35",
+                    tag: "bg-ember/5 text-ember border-ember/20",
+                    dot: "bg-ember",
+                    btn: "bg-ember/10 text-ember hover:bg-ember hover:text-white hover:shadow-md hover:shadow-ember/10",
+                  };
+                } else if (event.category === "Seminar") {
+                  themeClasses = {
+                    hover: "hover:shadow-[0_15px_40px_rgba(96,150,186,0.08)] hover:border-skyline/35",
+                    tag: "bg-skyline/5 text-skyline border-skyline/20",
+                    dot: "bg-skyline",
+                    btn: "bg-skyline/10 text-skyline hover:bg-skyline hover:text-white hover:shadow-md hover:shadow-skyline/10",
+                  };
+                }
+
+                return (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: idx * 0.08 }}
+                    className={`flex flex-col justify-between rounded-2xl border border-white/80 bg-white/35 backdrop-blur-md p-5 shadow-xs ${themeClasses.hover} transition-all duration-300 hover:-translate-y-0.5`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3.5">
+                        {/* Tag with dot */}
+                        <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-5xs font-bold uppercase tracking-wider border ${themeClasses.tag}`}>
+                          <span className={`h-1 w-1 rounded-full ${themeClasses.dot}`} />
+                          {event.category}
+                        </span>
+                        <span className="text-5xs font-mono text-ink/45 font-bold">
+                          {event.capacity ? `${event.capacity} seats` : "Open entry"}
+                        </span>
+                      </div>
+                      <h3 className="font-display text-sm font-bold text-ink leading-snug mb-3 group-hover:text-wisteria transition-colors line-clamp-2">
+                        {event.title}
+                      </h3>
+                      <div className="space-y-2 text-5xs text-ink/65 font-semibold">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-ink/45" />
+                          <span>{formatDate(event.date_start)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-3.5 w-3.5 text-ink/45" />
+                          <span className="line-clamp-1">{event.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-5 border-t border-mist/30 pt-4">
+                      <Link
+                        href={`/events/${event.slug}`}
+                        className={`inline-flex w-full items-center justify-center rounded-lg py-2.5 text-5xs font-bold transition-all duration-350 active:scale-[0.98] ${themeClasses.btn}`}
+                      >
+                        Details & Register
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center py-12 border border-dashed border-mist rounded-2xl bg-white/20">
+                <Calendar className="mx-auto h-8 w-8 text-ink/35 mb-3 animate-bounce" />
+                <p className="text-xs text-ink/55 font-bold">No upcoming events scheduled at the moment.</p>
+                <p className="text-5xs text-ink/45 mt-1 font-semibold">Check back later or join our community to stay updated!</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
