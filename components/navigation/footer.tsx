@@ -146,8 +146,19 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 border-t border-mist/60 pt-8 flex flex-col sm:flex-row justify-between gap-4 text-xs font-semibold text-ink/45">
+        <div className="mt-16 border-t border-mist/60 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-ink/45">
           <p>&copy; {new Date().getFullYear()} CODATOR. All rights reserved.</p>
+          <p className="text-[10px] text-ink/35">
+            Designed & Developed by{" "}
+            <a 
+              href="https://hanovadevs.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="hover:text-wisteria transition-colors underline decoration-wisteria/30 font-extrabold uppercase tracking-wider"
+            >
+              HanovaDevs Digital Agency
+            </a>
+          </p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-wisteria transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-wisteria transition-colors">Terms of Service</a>

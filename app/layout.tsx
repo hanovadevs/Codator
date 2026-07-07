@@ -24,7 +24,17 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "CODATOR — Computer Science & Engineering Society",
-  description: "Building the systems that run tomorrow. A society of computer science and computer engineering students.",
+  description: "Building the systems that run tomorrow. A society of computer science and computer engineering students. Designed & Developed by HanovaDevs Digital Agency.",
+  creator: "HanovaDevs Digital Agency",
+  publisher: "HanovaDevs Digital Agency",
+  keywords: [
+    "CODATOR",
+    "Computer Science Society",
+    "HanovaDevs",
+    "HanovaDevs Digital Agency",
+    "Web Development",
+    "Software Engineering Society"
+  ],
 };
 
 export default function RootLayout({

@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
     // 3. Parse and validate body
     const body = await request.json();
-    const { title, description, xp_reward, assigned_to } = body;
+    const { title, description, xp_reward, assigned_to, due_at } = body;
 
     if (!title || !xp_reward || !assigned_to || !Array.isArray(assigned_to) || assigned_to.length === 0) {
       return NextResponse.json(
@@ -91,6 +91,7 @@ export async function POST(request: Request) {
       assigned_by: assigner.id,
       assigned_to: target.id,
       status: "assigned",
+      due_at: due_at ? new Date(due_at).toISOString() : null,
     }));
 
     const { error: insertError } = await supabase

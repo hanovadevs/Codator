@@ -23,9 +23,14 @@ interface Task {
   xp_reward: number;
   assigned_by: string;
   assigned_to: string;
-  status: "assigned" | "pending_review" | "completed";
+  status: "assigned" | "pending_review" | "completed" | "cancelled";
   proof: string | null;
   proof_image: string | null;
+  due_at: string | null;
+  extension_requested_at: string | null;
+  extension_reason: string | null;
+  extension_status: "none" | "pending" | "approved" | "rejected";
+  extension_due_at: string | null;
   created_at: string;
   submitted_at: string | null;
   completed_at: string | null;
@@ -60,6 +65,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   // Tasks lists
   const [myTasks, setMyTasks] = useState<Task[]>([]);
   const [pendingReviews, setPendingReviews] = useState<Task[]>([]);
+  const [pendingExtensions, setPendingExtensions] = useState<Task[]>([]);
   const [assignedHistory, setAssignedHistory] = useState<Task[]>([]);
   const [membersList, setMembersList] = useState<Member[]>([]);
   const [xpHistory, setXpHistory] = useState<XpHistoryItem[]>([]);
@@ -74,6 +80,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
   const [taskXp, setTaskXp] = useState(100);
+  const [taskDueAt, setTaskDueAt] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [submittingTask, setSubmittingTask] = useState(false);
 
@@ -82,6 +89,12 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   const [proofText, setProofText] = useState("");
   const [proofImageBase64, setProofImageBase64] = useState<string | null>(null);
   const [submittingProof, setSubmittingProof] = useState(false);
+
+  // Form states for requesting extension
+  const [activeExtensionTaskId, setActiveExtensionTaskId] = useState<string | null>(null);
+  const [extensionReasonText, setExtensionReasonText] = useState("");
+  const [extensionProposedDueAt, setExtensionProposedDueAt] = useState("");
+  const [submittingExtension, setSubmittingExtension] = useState(false);
 
   const posLower = currentMember.position.toLowerCase();
   const isTopTier = posLower.includes("president") || posLower.includes("mentor");
@@ -92,6 +105,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   const fetchData = async () => {
     try {
       setLoading(true);
+      await supabase.rpc("check_expired_tasks");
 
       // 1. Fetch tasks assigned TO current user
       const { data: myData, error: myError } = await supabase
@@ -124,6 +138,24 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
         const { data: reviewData, error: reviewError } = await query;
         if (reviewError) throw reviewError;
         setPendingReviews((reviewData || []) as any);
+
+        // Fetch pending extension requests
+        let extQuery = supabase
+          .from("tasks")
+          .select(`
+            *,
+            assignee:members!tasks_assigned_to_fkey(id, full_name, codator_id, position, department)
+          `)
+          .eq("extension_status", "pending")
+          .order("extension_requested_at", { ascending: true });
+
+        if (!isTopTier) {
+          extQuery = extQuery.eq("assigned_by", currentMember.id);
+        }
+
+        const { data: extData, error: extError } = await extQuery;
+        if (extError) throw extError;
+        setPendingExtensions((extData || []) as any);
 
         // 3. Fetch list of eligible members to assign tasks to (including XP details)
         let memberQuery = supabase
@@ -252,6 +284,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
           description: taskDesc,
           xp_reward: taskXp,
           assigned_to: selectedMembers,
+          due_at: taskDueAt || null,
         }),
       });
 
@@ -262,6 +295,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
       setTaskTitle("");
       setTaskDesc("");
       setTaskXp(100);
+      setTaskDueAt("");
       setSelectedMembers([]);
       
       // Refresh tasks
@@ -300,6 +334,57 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
       alert(err.message || "Failed to submit proof");
     } finally {
       setSubmittingProof(false);
+    }
+  };
+
+  // Handle requesting extension
+  const handleRequestExtension = async (taskId: string) => {
+    if (!extensionReasonText.trim() || !extensionProposedDueAt) return;
+
+    try {
+      setSubmittingExtension(true);
+      const res = await fetch("/api/tasks/request-extension", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_id: taskId,
+          reason: extensionReasonText,
+          proposed_due_at: extensionProposedDueAt,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to request extension");
+
+      setExtensionReasonText("");
+      setExtensionProposedDueAt("");
+      setActiveExtensionTaskId(null);
+      await fetchData();
+    } catch (err: any) {
+      alert(err.message || "Failed to request extension");
+    } finally {
+      setSubmittingExtension(false);
+    }
+  };
+
+  // Handle reviewing extension request
+  const handleReviewExtension = async (taskId: string, action: "approve" | "reject") => {
+    try {
+      const res = await fetch("/api/tasks/review-extension", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_id: taskId,
+          action,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to review extension request");
+
+      await fetchData();
+    } catch (err: any) {
+      alert(err.message || "Action failed");
     }
   };
 
@@ -401,9 +486,9 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                 }`}
               >
                 Verify Tasks
-                {pendingReviews.length > 0 && (
+                {(pendingReviews.length > 0 || pendingExtensions.length > 0) && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] text-white font-extrabold animate-bounce">
-                    {pendingReviews.length}
+                    {pendingReviews.length + pendingExtensions.length}
                   </span>
                 )}
               </button>
@@ -512,13 +597,21 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                           ? "bg-emerald-500"
                           : task.status === "pending_review"
                           ? "bg-purple-500"
+                          : task.status === "cancelled"
+                          ? "bg-red-500"
                           : "bg-slate-300"
                       }`} />
 
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pl-2">
                         <div className="space-y-1.5 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className={`text-xs font-bold ${task.status === "completed" ? "text-emerald-700 line-through" : "text-ink"}`}>
+                            <h3 className={`text-xs font-bold ${
+                              task.status === "completed" 
+                                ? "text-emerald-700 line-through" 
+                                : task.status === "cancelled" 
+                                ? "text-red-700 line-through" 
+                                : "text-ink"
+                            }`}>
                               {task.title}
                             </h3>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-wisteria/15 bg-wisteria-tint text-[8px] font-bold text-wisteria">
@@ -529,14 +622,42 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                           <p className="text-4xs leading-relaxed text-ink/65 font-semibold">
                             {task.description || "No description provided."}
                           </p>
-                          <div className="text-[9px] text-ink/40 font-bold uppercase tracking-wider flex items-center gap-1.5 pt-1">
-                            <Clock className="h-3 w-3" />
-                            Assigned by {task.assigner?.full_name || "Admin"} on {new Date(task.created_at).toLocaleDateString()}
+                          <div className="text-[9px] text-ink/40 font-bold uppercase tracking-wider flex items-center gap-4 flex-wrap pt-1">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              Assigned by {task.assigner?.full_name || "Admin"} on {new Date(task.created_at).toLocaleDateString()}
+                            </span>
+                            {task.due_at && (
+                              <span className={`flex items-center gap-1 font-bold ${
+                                new Date(task.due_at).getTime() < Date.now() ? "text-red-500 animate-pulse" : "text-ink/65"
+                              }`}>
+                                • Deadline: {new Date(task.due_at).toLocaleString()}
+                              </span>
+                            )}
                           </div>
+
+                          {/* Render active extension status */}
+                          {task.extension_status === "pending" && (
+                            <div className="mt-2 text-[9px] bg-purple-500/[0.03] border border-purple-500/10 p-2 rounded-xl text-left text-purple-700">
+                              <span className="font-extrabold uppercase block tracking-wider mb-0.5">Pending Extension Request</span>
+                              Proposed: <span className="font-bold">{new Date(task.extension_due_at!).toLocaleString()}</span>
+                              <span className="block mt-0.5 text-ink/60 font-semibold italic">Reason: {task.extension_reason}</span>
+                            </div>
+                          )}
+                          {task.extension_status === "rejected" && (
+                            <div className="mt-2 text-[9px] bg-red-500/[0.03] border border-red-500/10 p-2 rounded-xl text-left text-red-650 font-semibold">
+                              Extension request was rejected by assigner.
+                            </div>
+                          )}
+                          {task.extension_status === "approved" && (
+                            <div className="mt-2 text-[9px] bg-emerald-500/[0.03] border border-emerald-500/10 p-2 rounded-xl text-left text-emerald-700 font-semibold">
+                              Extension request was approved! New deadline applied.
+                            </div>
+                          )}
                         </div>
 
                         {/* Status / Actions */}
-                        <div className="shrink-0">
+                        <div className="shrink-0 flex sm:flex-col items-end gap-2">
                           {task.status === "completed" && (
                             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-[9px] font-bold text-emerald-700">
                               <Check className="h-3 w-3" /> Completed
@@ -549,16 +670,37 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                             </span>
                           )}
 
+                          {task.status === "cancelled" && (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-red-200 bg-red-50 text-[9px] font-bold text-red-700">
+                              <X className="h-3 w-3" /> Expired (-10 XP)
+                            </span>
+                          )}
+
                           {task.status === "assigned" && activeProofTaskId !== task.id && (
-                            <button
-                              onClick={() => {
-                                setActiveProofTaskId(task.id);
-                                setProofText("");
-                              }}
-                              className="px-4 py-2 bg-wisteria hover:bg-wisteria/90 text-4xs font-bold text-white rounded-xl transition-all shadow-3xs cursor-pointer active:scale-[0.98]"
-                            >
-                              Report Completion
-                            </button>
+                            <div className="flex gap-2">
+                              {task.extension_status !== "pending" && activeExtensionTaskId !== task.id && (
+                                <button
+                                  onClick={() => {
+                                    setActiveExtensionTaskId(task.id);
+                                    setExtensionReasonText("");
+                                    setExtensionProposedDueAt("");
+                                  }}
+                                  className="px-3 py-2 border border-wisteria text-wisteria hover:bg-wisteria/5 text-4xs font-bold rounded-xl transition-all cursor-pointer active:scale-[0.98]"
+                                >
+                                  Request Extension
+                                </button>
+                              )}
+                              
+                              <button
+                                onClick={() => {
+                                  setActiveProofTaskId(task.id);
+                                  setProofText("");
+                                }}
+                                className="px-4 py-2 bg-wisteria hover:bg-wisteria/90 text-4xs font-bold text-white rounded-xl transition-all shadow-3xs cursor-pointer active:scale-[0.98]"
+                              >
+                                Report Completion
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -645,6 +787,54 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                                   <Send className="h-3 w-3" /> Submit Report
                                 </>
                               )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Expandable Extension Request Form */}
+                      {activeExtensionTaskId === task.id && (
+                        <div className="mt-2 pt-4 border-t border-mist/40 pl-2 space-y-4 text-left">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1.5">
+                              <label className="text-4xs font-bold text-ink uppercase tracking-wider block">
+                                Proposed New Deadline
+                              </label>
+                              <input
+                                type="datetime-local"
+                                required
+                                value={extensionProposedDueAt}
+                                onChange={(e) => setExtensionProposedDueAt(e.target.value)}
+                                className="w-full px-3 py-2 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none transition-all focus:shadow-sm"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1.5">
+                            <label className="text-4xs font-bold text-ink uppercase tracking-wider block">
+                              Justification / Reason
+                            </label>
+                            <textarea
+                              value={extensionReasonText}
+                              onChange={(e) => setExtensionReasonText(e.target.value)}
+                              placeholder="Please describe why you need more time to complete this sprint..."
+                              className="w-full min-h-[70px] p-3 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none transition-all placeholder:text-ink/30 focus:shadow-sm"
+                            />
+                          </div>
+
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => setActiveExtensionTaskId(null)}
+                              className="px-4 py-2 border border-mist bg-white hover:bg-mist/10 text-4xs font-bold rounded-xl transition-all cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleRequestExtension(task.id)}
+                              disabled={submittingExtension || !extensionReasonText.trim() || !extensionProposedDueAt}
+                              className="px-4 py-2 bg-wisteria hover:bg-wisteria/90 disabled:opacity-50 text-4xs font-bold text-white rounded-xl transition-all shadow-3xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+                            >
+                              {submittingExtension ? "Submitting..." : "Send Request"}
                             </button>
                           </div>
                         </div>
@@ -746,6 +936,16 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                       max={1000}
                       value={taskXp}
                       onChange={(e) => setTaskXp(parseInt(e.target.value) || 100)}
+                      className="w-full px-4 py-3 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none transition-all focus:shadow-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-4xs font-bold text-ink uppercase tracking-wider">Time Limit (Due Date - Optional)</label>
+                    <input
+                      type="datetime-local"
+                      value={taskDueAt}
+                      onChange={(e) => setTaskDueAt(e.target.value)}
                       className="w-full px-4 py-3 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none transition-all focus:shadow-sm"
                     />
                   </div>
@@ -920,6 +1120,72 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                   ))}
                 </div>
               )}
+
+              {/* Extension Requests Queue */}
+              {pendingExtensions.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-mist/40 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-2xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5 text-left">
+                      <Clock className="h-4.5 w-4.5 text-purple-600 animate-pulse" />
+                      <span>Extension Requests Queue</span>
+                    </h4>
+                    <span className="px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200 text-[8px] font-bold text-purple-700 uppercase">
+                      {pendingExtensions.length} pending
+                    </span>
+                  </div>
+
+                  <div className="grid gap-4">
+                    {pendingExtensions.map((task) => (
+                      <div
+                        key={task.id}
+                        className="border border-purple-500/10 bg-purple-500/[0.01] rounded-2xl p-5 flex flex-col space-y-4 text-left"
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                          <div className="space-y-1">
+                            <h3 className="text-xs font-bold text-ink">{task.title}</h3>
+                            <div className="text-[9px] text-ink/50 font-bold uppercase tracking-wider">
+                              Requester: <span className="text-ink font-extrabold">{task.assignee?.full_name}</span> ({task.assignee?.position} of {task.assignee?.department})
+                            </div>
+                            <div className="text-[9px] text-ink/40 font-bold uppercase tracking-wider flex items-center gap-2 mt-1">
+                              {task.due_at && (
+                                <span>Current: <span className="line-through">{new Date(task.due_at).toLocaleString()}</span></span>
+                              )}
+                              <span className="text-purple-700 font-extrabold">• Proposed: {new Date(task.extension_due_at!).toLocaleString()}</span>
+                            </div>
+                          </div>
+
+                          {/* Extension Actions */}
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleReviewExtension(task.id, "reject")}
+                              className="px-3 py-1.5 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-4xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" /> Reject
+                            </button>
+                            
+                            <button
+                              onClick={() => handleReviewExtension(task.id, "approve")}
+                              className="px-3 py-1.5 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-4xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <Check className="h-3.5 w-3.5" /> Approve Extension
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Request reason */}
+                        <div className="border border-purple-200 bg-purple-50/50 p-4 rounded-xl space-y-1">
+                          <div className="text-[8px] font-bold text-purple-700 uppercase tracking-widest flex items-center gap-1">
+                            <FileText className="h-3 w-3" /> Justification Reason
+                          </div>
+                          <p className="text-4xs font-semibold text-ink/75 leading-relaxed italic">
+                            "{task.extension_reason}"
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {/* Tab 4: Assigned History (Outbox) */}
@@ -936,7 +1202,8 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                     const statusStyles = {
                       completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
                       pending_review: "border-purple-200 bg-purple-50 text-purple-700",
-                      assigned: "border-slate-205 bg-slate-50 text-slate-600"
+                      assigned: "border-slate-205 bg-slate-50 text-slate-650",
+                      cancelled: "border-red-200 bg-red-50 text-red-700",
                     }[task.status] || "border-mist bg-white text-ink";
                     
                     const handleRevokeTask = async () => {
@@ -958,7 +1225,13 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                           <div className="space-y-1.5 flex-1 text-left">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-xs font-bold text-ink">
+                              <h3 className={`text-xs font-bold ${
+                                task.status === "completed" 
+                                  ? "text-emerald-700 line-through" 
+                                  : task.status === "cancelled" 
+                                  ? "text-red-750 line-through"
+                                  : "text-ink"
+                              }`}>
                                 {task.title}
                               </h3>
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-wisteria/15 bg-wisteria-tint text-[8px] font-bold text-wisteria">
@@ -972,8 +1245,34 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                             <div className="text-[9px] text-ink/40 font-bold uppercase tracking-wider flex items-center gap-4 flex-wrap pt-1">
                               <span>Assignee: <span className="text-ink font-extrabold">{task.assignee?.full_name}</span> ({task.assignee?.position} of {task.assignee?.department})</span>
                               <span>Created on: {new Date(task.created_at).toLocaleDateString()}</span>
-                              {task.completed_at && <span>Completed on: {new Date(task.completed_at).toLocaleDateString()}</span>}
+                              {task.due_at && <span>Deadline: {new Date(task.due_at).toLocaleString()}</span>}
+                              {task.completed_at && <span>{task.status === "cancelled" ? "Expired on" : "Completed on"}: {new Date(task.completed_at).toLocaleDateString()}</span>}
                             </div>
+
+                            {/* Render active extension review options inline in Outbox */}
+                            {task.extension_status === "pending" && (
+                              <div className="mt-3 p-3 bg-purple-500/[0.02] border border-purple-500/10 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <div className="space-y-0.5">
+                                  <span className="text-[8px] font-bold text-purple-700 uppercase tracking-widest block">Proposed Extension Request</span>
+                                  <span className="text-4xs font-semibold text-ink/75 block">Proposed Deadline: <span className="font-bold">{new Date(task.extension_due_at!).toLocaleString()}</span></span>
+                                  <span className="text-[10px] text-ink/55 block italic">Reason: "{task.extension_reason}"</span>
+                                </div>
+                                <div className="flex gap-2 shrink-0">
+                                  <button
+                                    onClick={() => handleReviewExtension(task.id, "reject")}
+                                    className="px-2.5 py-1.5 text-[9px] border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    Reject
+                                  </button>
+                                  <button
+                                    onClick={() => handleReviewExtension(task.id, "approve")}
+                                    className="px-2.5 py-1.5 text-[9px] border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    Approve
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-start">
@@ -981,7 +1280,12 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                               {task.status === "completed" && <Check className="h-3 w-3" />}
                               {task.status === "pending_review" && <Clock className="h-3 w-3 animate-spin" style={{ animationDuration: "3s" }} />}
                               {task.status === "assigned" && <Clock className="h-3 w-3" />}
-                              {task.status === "pending_review" ? "Pending Review" : task.status.toUpperCase()}
+                              {task.status === "cancelled" && <X className="h-3 w-3" />}
+                              {task.status === "pending_review" 
+                                ? "Pending Review" 
+                                : task.status === "cancelled" 
+                                ? "EXPIRED / CANCELLED" 
+                                : task.status.toUpperCase()}
                             </span>
 
                             {task.status !== "completed" && (
