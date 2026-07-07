@@ -22,7 +22,7 @@ export default async function PublicVerifyPage({ searchParams }: VerifyPageProps
     // 1. Fetch member details from database
     const { data, error } = await supabase
       .from("members")
-      .select("id, full_name, codator_id, department, batch_year, status")
+      .select("id, full_name, codator_id, department, batch_year, status, pass_token")
       .eq("id", id)
       .maybeSingle();
 
@@ -33,9 +33,8 @@ export default async function PublicVerifyPage({ searchParams }: VerifyPageProps
       errorDetail = "This member account is currently inactive.";
     } else {
       member = data;
-      // 2. Cryptographically verify the token signature
-      const passSecret = process.env.PASS_SECRET || "default_pass_secret_key_12345";
-      isValid = verifyPassToken(`${id}|${member.codator_id}`, token, passSecret);
+      // 2. Verify the token matches the stored pass_token
+      isValid = token === data.pass_token;
       
       if (!isValid) {
         errorDetail = "Pass signature verification failed. The pass may have been tampered with.";

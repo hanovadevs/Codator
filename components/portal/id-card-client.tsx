@@ -15,7 +15,21 @@ interface MemberPayload {
   phone: string | null;
   role: string;
   skills: string[];
+  position?: string;
 }
+
+const cleanPositionString = (pos: string | null | undefined): string => {
+  if (!pos) return "Member";
+  let clean = pos
+    .replace(/::\w+/g, "") // Remove ::text
+    .replace(/'/g, "")     // Remove single quotes
+    .replace(/"/g, "")     // Remove double quotes
+    .trim();
+  if (!clean || clean.toLowerCase() === "member") {
+    return "Member";
+  }
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+};
 
 interface IdCardClientProps {
   member: MemberPayload;
@@ -164,7 +178,7 @@ export default function IdCardClient({ member, qrCodeUrl }: IdCardClientProps) {
                   {member.full_name}
                 </h2>
                 <span className="text-4xs font-bold uppercase tracking-wider text-ink/50 block line-clamp-1">
-                  {member.department}
+                  {member.department ? `${cleanPositionString(member.position)} of ${member.department}` : cleanPositionString(member.position)}
                 </span>
                 <span className="text-5xs font-semibold text-ink/40 block">
                   Batch of {member.batch_year}

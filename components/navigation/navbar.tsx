@@ -76,16 +76,16 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`relative py-1 transition-colors hover:text-wisteria ${
-                      isActive ? "text-wisteria font-semibold" : ""
+                    className={`relative px-3.5 py-1.5 rounded-xl transition-all duration-200 hover:text-wisteria font-semibold tracking-wide text-5xs ${
+                      isActive ? "text-wisteria font-extrabold" : "text-ink/65"
                     }`}
                   >
-                    {link.label}
+                    <span className="relative z-10">{link.label}</span>
                     {isActive && (
                       <motion.span
-                        layoutId="activeNavUnderline"
-                        className="absolute bottom-0 left-0 h-0.5 w-full bg-wisteria"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        layoutId="activeNavPill"
+                        className="absolute inset-0 bg-wisteria/5 border border-wisteria/10 rounded-xl"
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
                       />
                     )}
                   </Link>

@@ -15,7 +15,7 @@ export default async function PortalIdCardPage() {
   // 2. Fetch member profile with all details for the card
   const { data: member } = await supabase
     .from("members")
-    .select("id, full_name, codator_id, department, batch_year, pass_token, university_roll, email, phone, role, skills")
+    .select("id, full_name, codator_id, department, batch_year, pass_token, university_roll, email, phone, role, skills, position")
     .or(`user_id.eq.${user?.id},email.eq.${user?.email}`)
     .single();
 

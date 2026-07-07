@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin, Sparkles, Lightbulb, Code, Rocket } from "lucide-react";
 import ConstellationReveal from "@/components/hero/constellation-reveal";
 import { createClient } from "@/lib/supabase/client";
+import LiveTerminal from "@/components/ui/live-terminal";
+import DevSandbox from "@/components/ui/dev-sandbox";
 
 const activities = [
   {
@@ -133,8 +135,17 @@ export default function HomePage() {
   };
 
   const fadeUpVars = {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
+    hidden: { opacity: 0, y: 25 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        type: "spring" as const,
+        stiffness: 90,
+        damping: 17,
+        mass: 0.8
+      } 
+    },
   };
 
   return (
@@ -221,8 +232,13 @@ export default function HomePage() {
               </motion.div>
             </motion.div>
 
-            {/* Right Side: Empty space on desktop to let the background image's cube show through */}
-            <div className="hidden lg:block lg:col-span-5 h-[350px]" />
+            {/* Right Side: Interactive Terminal shell */}
+            <motion.div 
+              variants={fadeUpVars}
+              className="lg:col-span-5 w-full flex items-center justify-center lg:pl-6 mt-8 lg:mt-0"
+            >
+              <LiveTerminal />
+            </motion.div>
           </div>
 
           {/* Bottom Features Strip */}
@@ -546,6 +562,70 @@ export default function HomePage() {
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3.8 INTERACTIVE DEVSANDBOX & TOOLBOX */}
+      <section className="py-20 sm:py-24 border-t border-mist/40 bg-[#FAF9FD] relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute top-1/2 left-1/3 w-[30vw] h-[30vw] rounded-full bg-wisteria/5 blur-[100px] pointer-events-none" />
+
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left: DevSandbox Component */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="lg:col-span-6 w-full"
+            >
+              <DevSandbox />
+            </motion.div>
+
+            {/* Right: Info and Tech Stack Marquee */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="lg:col-span-6 space-y-6"
+            >
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/85 bg-white/50 backdrop-blur-md px-3 py-0.5 text-5xs font-bold uppercase tracking-widest text-wisteria mb-3 shadow-[0_4px_12px_rgba(0,0,0,0.01)]">
+                  Developer Sandbox
+                </span>
+                <h2 className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl text-[#1D1B26] leading-tight">
+                  Interact with Our Core Tools & Tech Stack
+                </h2>
+                <p className="mt-4 text-xs leading-relaxed text-ink/65 font-semibold">
+                  At CODATOR, we believe in hands-on building. Toggle logic gates, calculate binary sequences, or view real-time metrics of our engineering phylas right from this sandbox.
+                </p>
+              </div>
+
+              {/* Minimalist Tech Stack List */}
+              <div className="space-y-3 font-sans">
+                <h4 className="text-5xs font-extrabold uppercase tracking-wider text-ink/40">Core Languages & Ecosystem</h4>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Rust (Systems & Back-end)",
+                    "TypeScript (Full-stack)",
+                    "Go (Distributed Systems)",
+                    "Docker & Kubernetes",
+                    "PostgreSQL & Supabase",
+                    "Next.js & React",
+                  ].map((tech) => (
+                    <span
+                      key={tech}
+                      className="px-3 py-1.5 bg-[#FFFFFF] border border-mist/50 rounded-xl text-5xs font-bold text-ink shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:border-wisteria/35 transition-colors"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
