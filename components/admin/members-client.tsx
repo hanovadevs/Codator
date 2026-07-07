@@ -70,6 +70,7 @@ const POSITION_OPTIONS = [
   "Vice President",
   "Vice President (Female)",
   "Managing Director",
+  "Managing Director (Female)",
   "General secretary",
   "Treasurer",
   "Director",
