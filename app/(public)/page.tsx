@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin, Sparkles, Lightbulb, Code, Rocket } from "lucide-react";
 import ConstellationReveal from "@/components/hero/constellation-reveal";
 import { createClient } from "@/lib/supabase/client";
@@ -18,6 +18,7 @@ const activities = [
     gradient: "from-wisteria/5 to-skyline/5",
     iconColor: "text-wisteria",
     borderColor: "group-hover:border-wisteria/30",
+    imageSrc: "/tech_hackathon.png",
   },
   {
     icon: Cpu,
@@ -26,6 +27,7 @@ const activities = [
     gradient: "from-skyline/5 to-wisteria/5",
     iconColor: "text-skyline",
     borderColor: "group-hover:border-skyline/30",
+    imageSrc: "/tech_systems.png",
   },
   {
     icon: Globe,
@@ -34,6 +36,7 @@ const activities = [
     gradient: "from-ember/5 to-wisteria/5",
     iconColor: "text-ember",
     borderColor: "group-hover:border-ember/30",
+    imageSrc: "/tech_opensource.png",
   },
   {
     icon: Users,
@@ -42,6 +45,7 @@ const activities = [
     gradient: "from-wisteria/5 to-ember/5",
     iconColor: "text-wisteria",
     borderColor: "group-hover:border-wisteria/30",
+    imageSrc: "/tech_mentorship.png",
   },
 ];
 
@@ -91,6 +95,7 @@ const phyla = [
 export default function HomePage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     async function loadEvents() {
@@ -157,19 +162,12 @@ export default function HomePage() {
       <section 
         className="relative flex min-h-[95vh] items-center justify-center overflow-hidden border-b border-mist/40 px-4 sm:px-6 lg:px-8 bg-no-repeat bg-cover"
         style={{ 
-          backgroundImage: "url('/hero_raw.png')",
-          backgroundPosition: "right -90px"
+          backgroundImage: "url('/tech_society_hero.png')",
+          backgroundPosition: "center right"
         }}
       >
-        {/* Glassmorphic Gradient Overlay to cover the left-side text in the background image */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#F8F8FC] via-[#F8F8FC] via-50% to-[#F8F8FC]/35 lg:to-transparent z-0" />
-        
-        {/* Soft Glowing Orbs */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-          <div className="absolute -top-[10%] left-[10%] w-[45vw] h-[45vw] rounded-full bg-wisteria/8 blur-[100px] animate-pulse" style={{ animationDuration: "12s" }} />
-          <div className="absolute -bottom-[10%] right-[10%] w-[45vw] h-[45vw] rounded-full bg-skyline/8 blur-[100px] animate-pulse" style={{ animationDuration: "16s" }} />
-          <div className="absolute top-[30%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-ember/4 blur-[80px]" />
-        </div>
+        {/* Glassmorphic Gradient Overlay to cover the left side for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F8F8FC] via-[#F8F8FC]/90 via-40% to-transparent z-0" />
 
         <ConstellationReveal />
 
@@ -317,68 +315,87 @@ export default function HomePage() {
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            {/* Left Column: Activities */}
-            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="border border-white/80 bg-white/40 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.02)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* Left Column: Accordion */}
+            <div className="lg:col-span-7 flex flex-col justify-center space-y-4">
               {activities.map((act, idx) => {
                 const Icon = act.icon;
+                const isActive = activeIndex === idx;
                 return (
-                  <motion.div
+                  <div
                     key={idx}
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ duration: 0.4, delay: idx * 0.08 }}
-                    className="group relative overflow-hidden rounded-2xl border border-white/80 bg-white/40 backdrop-blur-md p-5 shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_12px_40px_rgba(142,132,173,0.08)] hover:border-wisteria/25 transition-all duration-300 hover:-translate-y-0.5"
+                    className={`border rounded-2xl overflow-hidden transition-all duration-350 ${
+                      isActive
+                        ? "border-wisteria/30 bg-[#FFFFFF]/80 shadow-[0_8px_20px_rgba(142,132,173,0.03)]"
+                        : "border-mist/20 hover:border-wisteria/15 bg-transparent"
+                    }`}
                   >
-                    <div className="flex items-start gap-4">
-                      {/* Icon with colored backdrop */}
-                      <div className={`rounded-xl p-2.5 shadow-3xs ${act.iconColor} bg-white border border-mist/45 group-hover:scale-105 transition-transform duration-300`}>
-                        <Icon className="h-4.5 w-4.5" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <h3 className="font-display text-xs font-bold text-ink group-hover:text-wisteria transition-colors">
+                    {/* Accordion Header */}
+                    <button
+                      onClick={() => setActiveIndex(idx)}
+                      className="w-full px-5 py-4 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div className={`rounded-xl p-2.5 transition-colors ${
+                          isActive ? "bg-wisteria/10 text-wisteria" : "bg-[#F8F8FC] text-ink/40"
+                        }`}>
+                          <Icon className="h-4.5 w-4.5" />
+                        </div>
+                        <h3 className={`font-display text-xs font-bold transition-colors ${
+                          isActive ? "text-wisteria" : "text-ink"
+                        }`}>
                           {act.title}
                         </h3>
+                      </div>
+                      <span className={`text-[10px] font-bold font-mono transition-transform duration-350 ${
+                        isActive ? "text-wisteria rotate-90" : "text-ink/35"
+                      }`}>
+                        &gt;
+                      </span>
+                    </button>
+
+                    {/* Accordion Content */}
+                    <motion.div
+                      initial={false}
+                      animate={{ height: isActive ? "auto" : 0, opacity: isActive ? 1 : 0 }}
+                      transition={{ duration: 0.35, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-5 pt-1 pl-[52px]">
                         <p className="text-5xs leading-relaxed text-ink/65 font-semibold">
                           {act.description}
                         </p>
                       </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  </div>
                 );
               })}
             </div>
 
-            {/* Right Column: Premium Illustration */}
-            <div className="lg:col-span-5 flex justify-center">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.97 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                animate={{ y: [0, -6, 0] }}
-                transition={{
-                  y: {
-                    repeat: Infinity,
-                    duration: 6,
-                    ease: "easeInOut",
-                  },
-                  opacity: { duration: 0.5 },
-                  scale: { duration: 0.5 },
-                }}
-                viewport={{ once: true, margin: "-50px" }}
-                className="relative w-full max-w-[320px] aspect-square rounded-3xl border border-white/80 bg-white/40 backdrop-blur-md p-4 shadow-xl shadow-wisteria/5 hover:shadow-2xl transition-all duration-300"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-wisteria/10 via-skyline/5 to-transparent z-0 rounded-3xl" />
-                <div className="relative w-full h-full z-10 rounded-2xl overflow-hidden bg-white border border-mist/45 shadow-sm">
-                  <Image
-                    src="/collaboration_bg.png"
-                    alt="CODATOR Member Collaboration"
-                    fill
-                    sizes="320px"
-                    className="object-cover"
-                  />
-                </div>
-              </motion.div>
+            {/* Right Column: Image Reveal with AnimatePresence */}
+            <div className="lg:col-span-5 flex items-center justify-center min-h-[300px]">
+              <div className="relative w-full h-full min-h-[300px] rounded-2xl overflow-hidden bg-[#F8F8FC] border border-mist/35 shadow-xs flex">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeIndex}
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="absolute inset-0 flex"
+                  >
+                    <Image
+                      src={activities[activeIndex].imageSrc}
+                      alt={activities[activeIndex].title}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 400px"
+                      className="object-cover"
+                      priority
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>

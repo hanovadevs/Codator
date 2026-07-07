@@ -19,11 +19,13 @@ export default function LiveTerminal() {
     },
   ]);
   const [inputValue, setInputValue] = useState("");
-  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
   }, [history]);
 
   const handleTerminalClick = () => {
@@ -115,7 +117,10 @@ export default function LiveTerminal() {
       </div>
 
       {/* Terminal Output Area */}
-      <div className="flex-1 overflow-y-auto space-y-2.5 pr-2 scrollbar-thin">
+      <div 
+        ref={outputRef}
+        className="flex-1 overflow-y-auto space-y-2.5 pr-2 scrollbar-thin"
+      >
         {history.map((line, idx) => (
           <div key={idx} className="space-y-1">
             {line.input && (
@@ -135,7 +140,6 @@ export default function LiveTerminal() {
             )}
           </div>
         ))}
-        <div ref={terminalEndRef} />
       </div>
 
       {/* Input Prompt */}
