@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Check, X, FileText, Send, ListTodo, ClipboardCheck, Sparkles, Clock, AlertCircle, Search, Filter, ArrowUpDown } from "lucide-react";
+import { Plus, Check, X, FileText, Send, ListTodo, ClipboardCheck, Sparkles, Clock, AlertCircle, Search, Filter, ArrowUpDown, Image as ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Member {
@@ -25,6 +25,7 @@ interface Task {
   assigned_to: string;
   status: "assigned" | "pending_review" | "completed";
   proof: string | null;
+  proof_image: string | null;
   created_at: string;
   submitted_at: string | null;
   completed_at: string | null;
@@ -41,6 +42,14 @@ interface Task {
   } | null;
 }
 
+interface XpHistoryItem {
+  id: string;
+  title: string;
+  xp: number;
+  date: string;
+  type: "task" | "event";
+}
+
 export default function TasksManager({ currentMember }: { currentMember: Member }) {
   const router = useRouter();
   const supabase = createClient();
@@ -53,6 +62,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   const [pendingReviews, setPendingReviews] = useState<Task[]>([]);
   const [assignedHistory, setAssignedHistory] = useState<Task[]>([]);
   const [membersList, setMembersList] = useState<Member[]>([]);
+  const [xpHistory, setXpHistory] = useState<XpHistoryItem[]>([]);
 
   // Search & Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,6 +80,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   // Form states for submitting proof
   const [activeProofTaskId, setActiveProofTaskId] = useState<string | null>(null);
   const [proofText, setProofText] = useState("");
+  const [proofImageBase64, setProofImageBase64] = useState<string | null>(null);
   const [submittingProof, setSubmittingProof] = useState(false);
 
   const posLower = currentMember.position.toLowerCase();
@@ -156,6 +167,65 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
         if (histError) throw histError;
         setAssignedHistory((histData || []) as any);
       }
+
+      // 5. Fetch XP History Log (completed tasks + checked-in events)
+      // Completed Tasks
+      const { data: compTasks, error: compTasksError } = await supabase
+        .from("tasks")
+        .select("id, title, xp_reward, completed_at")
+        .eq("assigned_to", currentMember.id)
+        .eq("status", "completed");
+
+      // Checked-in Events
+      const { data: checkInRegs, error: checkInRegsError } = await supabase
+        .from("event_registrations")
+        .select(`
+          checked_in_at,
+          event:events(title)
+        `)
+        .eq("member_id", currentMember.id)
+        .not("checked_in_at", "is", null);
+
+      if (!compTasksError && !checkInRegsError) {
+        const historyItems: XpHistoryItem[] = [];
+
+        // Add baseline level startup XP
+        historyItems.push({
+          id: "baseline",
+          title: "Account Initialization Baseline",
+          xp: 100,
+          date: new Date(new Date().getFullYear(), 0, 1).toISOString(), // Jan 1st of current year
+          type: "event"
+        });
+
+        if (compTasks) {
+          compTasks.forEach((t) => {
+            historyItems.push({
+              id: t.id,
+              title: `Completed Task: "${t.title}"`,
+              xp: t.xp_reward,
+              date: t.completed_at || new Date().toISOString(),
+              type: "task"
+            });
+          });
+        }
+
+        if (checkInRegs) {
+          checkInRegs.forEach((r: any, idx) => {
+            historyItems.push({
+              id: `event-${idx}`,
+              title: `Attended Event: "${r.event?.title || "CODATOR Event"}"`,
+              xp: 200,
+              date: r.checked_in_at,
+              type: "event"
+            });
+          });
+        }
+
+        // Sort by date descending
+        historyItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setXpHistory(historyItems);
+      }
     } catch (err) {
       console.error("Error fetching tasks data:", err);
     } finally {
@@ -215,6 +285,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
         body: JSON.stringify({
           task_id: taskId,
           proof: proofText,
+          proof_image: proofImageBase64,
         }),
       });
 
@@ -222,6 +293,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
       if (!res.ok) throw new Error(data.error || "Failed to submit proof");
 
       setProofText("");
+      setProofImageBase64(null);
       setActiveProofTaskId(null);
       await fetchData();
     } catch (err: any) {
@@ -505,6 +577,57 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                               className="w-full min-h-[90px] p-3 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none transition-all placeholder:text-ink/30 focus:shadow-sm"
                             />
                           </div>
+
+                          <div className="space-y-2.5 text-left">
+                            <label className="text-4xs font-bold text-ink uppercase tracking-wider block">
+                              Screenshot Proof (Optional)
+                            </label>
+                            
+                            {proofImageBase64 ? (
+                              <div className="relative inline-block group">
+                                <img 
+                                  src={proofImageBase64} 
+                                  alt="Proof preview" 
+                                  className="max-h-36 rounded-lg border border-mist object-contain bg-white"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setProofImageBase64(null)}
+                                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-1 border border-white shadow-xs hover:bg-red-600 transition-colors"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <label className="flex items-center gap-1.5 border border-mist hover:border-wisteria hover:bg-wisteria/5 text-ink/75 font-semibold text-4xs p-2.5 px-4 rounded-xl cursor-pointer transition-all shadow-3xs">
+                                  <ImageIcon className="h-3.5 w-3.5 text-ink/40" />
+                                  <span>Choose Screenshot</span>
+                                  <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        if (file.size > 2 * 1024 * 1024) {
+                                          alert("Image file size should be less than 2MB.");
+                                          return;
+                                        }
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                          setProofImageBase64(reader.result as string);
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    }}
+                                    className="hidden"
+                                  />
+                                </label>
+                                <span className="text-[10px] text-ink/40">PNG, JPG, JPEG (Max 2MB)</span>
+                              </div>
+                            )}
+                          </div>
+
                           <div className="flex gap-2 justify-end">
                             <button
                               onClick={() => setActiveProofTaskId(null)}
@@ -530,6 +653,59 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                   ))}
                 </div>
               )}
+
+              {/* XP Gain History Transaction Log */}
+              <div className="mt-8 pt-6 border-t border-mist/40 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5 text-left">
+                    <h4 className="text-2xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-wisteria animate-pulse" />
+                      <span>My XP Transaction History</span>
+                    </h4>
+                    <p className="text-[10px] text-ink/45 font-semibold">
+                      Real-time breakdown of all your completed tasks and event attendance XP logs
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full border border-wisteria/15 bg-wisteria-tint text-[8px] font-bold text-wisteria uppercase">
+                    {xpHistory.length} logs
+                  </span>
+                </div>
+
+                <div className="border border-mist bg-white/45 rounded-2xl overflow-hidden shadow-3xs divide-y divide-mist/35">
+                  {xpHistory.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="p-3.5 flex items-center justify-between hover:bg-wisteria-tint/[0.02] transition-colors text-left"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex px-1.5 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wider ${
+                            item.id === "baseline" 
+                              ? "bg-slate-100 text-slate-650 border border-slate-200"
+                              : item.type === "task" 
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100" 
+                              : "bg-blue-50 text-blue-700 border border-blue-100"
+                          }`}>
+                            {item.id === "baseline" ? "Baseline" : item.type}
+                          </span>
+                          <span className="text-[9px] text-ink/40 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{new Date(item.date).toLocaleString()}</span>
+                          </span>
+                        </div>
+                        <div className="text-4xs font-bold text-ink leading-snug">{item.title}</div>
+                      </div>
+                      <div className="text-right font-mono font-black text-xs text-wisteria flex items-center gap-0.5 shrink-0 pl-4">
+                        +{item.xp} XP
+                      </div>
+                    </div>
+                  ))}
+
+                  {xpHistory.length === 0 && (
+                    <div className="text-center text-[10px] text-ink/40 italic py-6">No XP logs recorded yet.</div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -722,6 +898,24 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                           </p>
                         </div>
                       </div>
+
+                      {task.proof_image && (
+                        <div className="border border-mist bg-white rounded-xl overflow-hidden shadow-3xs">
+                          <div className="bg-[#F8F8FC] border-b border-mist/35 p-2 px-3 flex items-center justify-between">
+                            <span className="text-[8px] font-bold text-ink/40 uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                              <ImageIcon className="h-3 w-3 text-wisteria" /> attached_screenshot.png
+                            </span>
+                            <span className="text-[8px] font-mono text-ink/30 select-none">IMAGE</span>
+                          </div>
+                          <div className="p-4 bg-white/45 flex justify-start">
+                            <img 
+                              src={task.proof_image} 
+                              alt="Member uploaded image proof" 
+                              className="max-h-64 rounded-lg object-contain border border-mist/50 bg-white"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -811,6 +1005,19 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                             <p className="text-4xs font-semibold text-ink/75 leading-relaxed font-mono">
                               {task.proof}
                             </p>
+                          </div>
+                        )}
+
+                        {task.status === "completed" && task.proof_image && (
+                          <div className="mt-3 border border-mist/40 bg-white/50 p-3.5 rounded-xl space-y-1 text-left">
+                            <div className="text-[8px] font-bold text-ink/40 uppercase tracking-widest flex items-center gap-1">
+                              <ImageIcon className="h-3 w-3 text-wisteria" /> Attached Image Proof
+                            </div>
+                            <img 
+                              src={task.proof_image} 
+                              alt="Task proof image" 
+                              className="max-h-60 rounded-lg border border-mist/35 object-contain bg-white mt-1"
+                            />
                           </div>
                         )}
                       </div>

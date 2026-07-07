@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
     // 3. Parse body
     const body = await request.json();
-    const { task_id, proof } = body;
+    const { task_id, proof, proof_image } = body;
 
     if (!task_id || !proof || proof.trim() === "") {
       return NextResponse.json(
@@ -70,6 +70,7 @@ export async function POST(request: Request) {
       .update({
         status: "pending_review",
         proof,
+        proof_image,
         submitted_at: new Date().toISOString(),
       })
       .eq("id", task_id);

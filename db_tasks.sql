@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.tasks (
   assigned_to uuid NOT NULL REFERENCES public.members(id) ON DELETE CASCADE,
   status text NOT NULL DEFAULT 'assigned' CHECK (status IN ('assigned', 'pending_review', 'completed')),
   proof text,
+  proof_image text,
   created_at timestamptz DEFAULT now(),
   submitted_at timestamptz,
   completed_at timestamptz
@@ -54,3 +55,7 @@ CREATE POLICY "Allow assigners to manage tasks they created"
     (SELECT position FROM public.members WHERE user_id = auth.uid() OR email = auth.jwt() ->> 'email') ILIKE '%president%' OR
     (SELECT position FROM public.members WHERE user_id = auth.uid() OR email = auth.jwt() ->> 'email') ILIKE '%mentor%'
   );
+
+-- 4. Apply column extension to tasks table (if tasks table already exists)
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS proof_image text;
+
