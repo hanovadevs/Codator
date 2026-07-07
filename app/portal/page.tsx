@@ -7,14 +7,14 @@ export const revalidate = 0; // Dynamic dashboard
 export default async function PortalDashboardPage() {
   const supabase = await createClient();
 
-  // 1. Get user and member details (including position)
+  // 1. Get user and member details (including position, role, and xp)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, full_name, codator_id, department, batch_year, position, status")
+    .select("id, full_name, codator_id, department, batch_year, position, status, xp, role")
     .or(`user_id.eq.${user?.id},email.eq.${user?.email}`)
     .single();
 
@@ -109,7 +109,7 @@ export default async function PortalDashboardPage() {
 
   // Gamification Calculations
   const attendedCount = checkedInCount || 0;
-  const totalXp = 100 + attendedCount * 200;
+  const totalXp = 100 + (member.xp || 0) + attendedCount * 200;
   const currentLevel = Math.floor(totalXp / 500) + 1;
   const xpInLevel = totalXp % 500;
   const xpNeeded = 500;

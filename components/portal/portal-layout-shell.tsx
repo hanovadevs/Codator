@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldCheck, LayoutDashboard, IdCard, Calendar, Globe, Menu, X } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, IdCard, Calendar, Globe, Menu, X, ListTodo } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PortalLayoutShellProps {
@@ -28,6 +28,7 @@ export default function PortalLayoutShell({
     { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
     { href: "/portal/id-card", label: "My ID & Pass", icon: IdCard },
     { href: "/portal/events", label: "My Events", icon: Calendar },
+    { href: "/portal/tasks", label: "Tasks & Sprints", icon: ListTodo },
   ];
 
   const SidebarContent = () => (
