@@ -108,6 +108,18 @@ We have completed a massive upgrade to the CODATOR public site's UI/UX, content 
   * Created an administrative endpoint allowing admins to manually credit members with custom XP amounts for custom reasons.
   * Automatically creates a completed placeholder task in the database for tracking and transparency, showing up dynamically inside the member's XP Transaction History timeline log.
 
+### 13. Initiative Self-Report & Director Review System
+* **Department Cascading reviewer discovery** ([submit-initiative/route.ts](file:///c:/Users/User/Documents/Personal%20Projects/CODATOR/app/api/tasks/submit-initiative/route.ts)):
+  * Handled automatic routing to proper leaders (members route to Department Directors/Heads; Directors route to Presidents/VPs; fallbacks route to any Admin or active member).
+* **Custom XP review logic** ([review-initiative/route.ts](file:///c:/Users/User/Documents/Personal%20Projects/CODATOR/app/api/tasks/review-initiative/route.ts)):
+  * Allowed reviewers to choose custom XP reward weights on approval or cancel without penalty on rejection.
+* **Self-Reporting and review forms** ([tasks-manager.tsx](file:///c:/Users/User/Documents/Personal%20Projects/CODATOR/components/portal/tasks-manager.tsx)):
+  * Handled initiative report submissions with markdown instructions, file screenshot inputs, and review consoles.
+
+### 14. Advanced Team & Leadership Showroom
+* **Public Team Directory Redesign** ([page.tsx (team)](file:///c:/Users/User/Documents/Personal%20Projects/CODATOR/app/(public)/team/page.tsx)):
+  * Upgraded the directory layout with executive cards, quote strings, position badges, department statistics, collapsible phylum panels, and a custom join CTA.
+
 ---
 
 ## 🔬 Verification & Correctness

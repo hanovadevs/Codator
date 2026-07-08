@@ -62,3 +62,8 @@
   - [x] Auto-route submissions to appropriate department director or president for review
   - [x] Add initiative review cards in Verify Tasks tab with custom XP input field and approve/reject buttons
   - [x] Split pending reviews into regular task reviews and initiative submissions with separate badges
+- [x] Advanced Team & Leadership Showroom:
+  - [x] Redesign global public team directory page (`app/(public)/team/page.tsx`)
+  - [x] Group executive leadership into Core Body cards with dynamic quote grids, styled position badges, and color accents
+  - [x] Group department operations into sleek collapsible Accordions for Tech, Media, Research, and Event Management Phyla
+  - [x] Integrate interactive join-us CTA banner and custom society leadership statistics
