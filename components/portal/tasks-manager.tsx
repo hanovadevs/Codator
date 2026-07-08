@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Check, X, FileText, Send, ListTodo, ClipboardCheck, Sparkles, Clock, AlertCircle, Search, Filter, ArrowUpDown, Image as ImageIcon } from "lucide-react";
+import { Plus, Check, X, FileText, Send, ListTodo, ClipboardCheck, Sparkles, Clock, AlertCircle, Search, Filter, ArrowUpDown, Image as ImageIcon, Lightbulb, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Member {
@@ -59,7 +59,7 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   const router = useRouter();
   const supabase = createClient();
 
-  const [activeTab, setActiveTab] = useState<"my-tasks" | "assign" | "verify" | "assigned-history" | "standings">("my-tasks");
+  const [activeTab, setActiveTab] = useState<"my-tasks" | "assign" | "verify" | "assigned-history" | "standings" | "initiative">("my-tasks");
   const [loading, setLoading] = useState(true);
   
   // Tasks lists
@@ -96,10 +96,19 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
   const [extensionProposedDueAt, setExtensionProposedDueAt] = useState("");
   const [submittingExtension, setSubmittingExtension] = useState(false);
 
+  // Initiative self-report states
+  const [initTitle, setInitTitle] = useState("");
+  const [initDesc, setInitDesc] = useState("");
+  const [initProof, setInitProof] = useState("");
+  const [initProofImage, setInitProofImage] = useState<string | null>(null);
+  const [submittingInitiative, setSubmittingInitiative] = useState(false);
+  const [initiativeXpInput, setInitiativeXpInput] = useState<Record<string, number>>({});
+
   const posLower = currentMember.position.toLowerCase();
   const isTopTier = posLower.includes("president") || posLower.includes("mentor");
   const isDirectorTier = posLower.includes("director");
   const canAssign = isTopTier || isDirectorTier;
+  const canReportInitiative = !isTopTier; // Everyone except President/VP/Mentor
 
   // Fetch tasks and members
   const fetchData = async () => {
@@ -416,6 +425,65 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
     );
   };
 
+  // Handle submitting self-reported initiative
+  const handleSubmitInitiative = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initTitle.trim() || !initDesc.trim() || !initProof.trim()) return;
+
+    try {
+      setSubmittingInitiative(true);
+      const res = await fetch("/api/tasks/submit-initiative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: initTitle,
+          description: initDesc,
+          proof: initProof,
+          proof_image: initProofImage,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit initiative");
+
+      setInitTitle("");
+      setInitDesc("");
+      setInitProof("");
+      setInitProofImage(null);
+      await fetchData();
+      alert("Initiative submitted successfully! Your department director will review it.");
+    } catch (err: any) {
+      alert(err.message || "Something went wrong");
+    } finally {
+      setSubmittingInitiative(false);
+    }
+  };
+
+  // Handle reviewing initiative (approve with custom XP or reject)
+  const handleReviewInitiative = async (taskId: string, action: "approve" | "reject") => {
+    try {
+      const xpAward = action === "approve" ? (initiativeXpInput[taskId] || 50) : 0;
+
+      const res = await fetch("/api/tasks/review-initiative", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task_id: taskId,
+          action,
+          xp_award: xpAward,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to review initiative");
+
+      await fetchData();
+      router.refresh();
+    } catch (err: any) {
+      alert(err.message || "Action failed");
+    }
+  };
+
   // Filter and Sort My Tasks
   const filteredMyTasks = myTasks
     .filter((task) => {
@@ -438,17 +506,21 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
       mem.position.toLowerCase().includes(memberSearchTerm.toLowerCase());
   });
 
+  // Split pending reviews into regular tasks and initiatives
+  const regularPendingReviews = pendingReviews.filter((t) => !t.title.startsWith("[Initiative]"));
+  const initiativePendingReviews = pendingReviews.filter((t) => t.title.startsWith("[Initiative]"));
+
   return (
     <div className="border border-mist bg-paper/40 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.01)] space-y-6">
       {/* Header and Tabs */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-mist/35 pb-5 gap-4">
-        <div>
-          <h2 className="font-display text-lg font-black text-ink flex items-center gap-2">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-mist/35 pb-5 gap-4">
+        <div className="space-y-1">
+          <h2 className="font-display text-base sm:text-lg font-black text-ink flex items-center gap-2.5">
             <ListTodo className="h-5 w-5 text-wisteria animate-pulse" />
             <span>Tasks & Sprints Management</span>
           </h2>
-          <p className="text-5xs font-bold uppercase tracking-wider text-ink/40 mt-1">
-            Complete tasks, earn Experience Points, and level up
+          <p className="text-3xs font-semibold text-ink/45">
+            Complete tasks, earn Experience Points, and level up your standing.
           </p>
         </div>
 
@@ -513,6 +585,20 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                 Member XP Board
               </button>
             </>
+          )}
+
+          {/* Report Initiative Tab (for non-top-tier members) */}
+          {canReportInitiative && (
+            <button
+              onClick={() => setActiveTab("initiative")}
+              className={`px-4 py-2 rounded-lg text-4xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                activeTab === "initiative"
+                  ? "bg-white text-wisteria shadow-[0_2px_8px_rgba(139,127,232,0.08)] border border-mist/40"
+                  : "text-ink/50 hover:text-ink"
+              }`}
+            >
+              <Lightbulb className="h-3 w-3" /> Report Initiative
+            </button>
           )}
         </div>
       </div>
@@ -1035,19 +1121,26 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                   <ClipboardCheck className="h-4.5 w-4.5 text-wisteria" />
                   <span className="text-4xs font-bold text-ink uppercase tracking-wider">Reports Queue</span>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-wisteria-tint border border-wisteria/15 text-[9px] font-extrabold text-wisteria">
-                  {pendingReviews.length} Pending Approval
-                </span>
+                <div className="flex gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-wisteria-tint border border-wisteria/15 text-[9px] font-extrabold text-wisteria">
+                    {regularPendingReviews.length} Task Reviews
+                  </span>
+                  {initiativePendingReviews.length > 0 && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-[9px] font-extrabold text-amber-700">
+                      {initiativePendingReviews.length} Initiatives
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {pendingReviews.length === 0 ? (
+              {regularPendingReviews.length === 0 && initiativePendingReviews.length === 0 ? (
                 <div className="py-12 text-center text-xs font-semibold text-ink/45 flex flex-col items-center gap-2.5">
                   <ClipboardCheck className="h-8 w-8 text-ink/30" />
                   No reports awaiting verification. Good job!
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {pendingReviews.map((task) => (
+                  {regularPendingReviews.map((task) => (
                     <div
                       key={task.id}
                       className="border border-mist bg-white/20 rounded-2xl p-5 flex flex-col space-y-4 hover:shadow-md hover:border-wisteria/15 transition-all duration-300"
@@ -1180,6 +1273,112 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                           <p className="text-4xs font-semibold text-ink/75 leading-relaxed italic">
                             "{task.extension_reason}"
                           </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Initiative Submissions Queue */}
+              {initiativePendingReviews.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-mist/40 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-2xs font-bold text-ink uppercase tracking-wider flex items-center gap-1.5 text-left">
+                      <Lightbulb className="h-4.5 w-4.5 text-amber-500" />
+                      <span>Initiative Submissions</span>
+                    </h4>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-[8px] font-bold text-amber-700 uppercase">
+                      {initiativePendingReviews.length} pending
+                    </span>
+                  </div>
+
+                  <div className="grid gap-4">
+                    {initiativePendingReviews.map((task) => (
+                      <div
+                        key={task.id}
+                        className="border border-amber-200/40 bg-amber-500/[0.015] rounded-2xl p-5 flex flex-col space-y-4 text-left hover:shadow-md hover:border-amber-300/40 transition-all duration-300"
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-amber-200 bg-amber-50 text-[8px] font-bold text-amber-700">
+                                <Lightbulb className="h-2.5 w-2.5" /> Self-Reported Initiative
+                              </span>
+                            </div>
+                            <h3 className="text-xs font-bold text-ink">{task.title.replace("[Initiative] ", "")}</h3>
+                            <div className="text-[9px] text-ink/50 font-bold uppercase tracking-wider">
+                              Submitted by: <span className="text-ink font-extrabold">{task.assignee?.full_name}</span> ({task.assignee?.position} of {task.assignee?.department})
+                            </div>
+                            <p className="text-4xs text-ink/60 font-semibold mt-1">{task.description}</p>
+                          </div>
+                        </div>
+
+                        {/* Proof Display */}
+                        <div className="border border-mist bg-white rounded-xl overflow-hidden shadow-3xs">
+                          <div className="bg-[#F8F8FC] border-b border-mist/35 p-2 px-3 flex items-center justify-between">
+                            <span className="text-[8px] font-bold text-ink/40 uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                              <FileText className="h-3 w-3" /> initiative_proof.txt
+                            </span>
+                            <span className="text-[8px] font-mono text-ink/30 select-none">ASCII / UTF-8</span>
+                          </div>
+                          <div className="p-4 bg-white/45">
+                            <p className="text-4xs font-semibold text-ink/75 leading-relaxed whitespace-pre-line font-mono">
+                              {task.proof}
+                            </p>
+                          </div>
+                        </div>
+
+                        {task.proof_image && (
+                          <div className="border border-mist bg-white rounded-xl overflow-hidden shadow-3xs">
+                            <div className="bg-[#F8F8FC] border-b border-mist/35 p-2 px-3 flex items-center justify-between">
+                              <span className="text-[8px] font-bold text-ink/40 uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                                <ImageIcon className="h-3 w-3 text-amber-500" /> attached_screenshot.png
+                              </span>
+                              <span className="text-[8px] font-mono text-ink/30 select-none">IMAGE</span>
+                            </div>
+                            <div className="p-4 bg-white/45 flex justify-start">
+                              <img 
+                                src={task.proof_image} 
+                                alt="Initiative proof" 
+                                className="max-h-64 rounded-lg object-contain border border-mist/50 bg-white"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* XP Award Input + Action Buttons */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 pt-2 border-t border-mist/30">
+                          <div className="flex-1 space-y-1">
+                            <label className="text-[8px] font-bold text-ink/50 uppercase tracking-widest block">XP Award Amount</label>
+                            <input
+                              type="number"
+                              min={5}
+                              max={2000}
+                              value={initiativeXpInput[task.id] || 50}
+                              onChange={(e) =>
+                                setInitiativeXpInput((prev) => ({
+                                  ...prev,
+                                  [task.id]: parseInt(e.target.value) || 50,
+                                }))
+                              }
+                              className="w-full sm:w-40 px-3 py-2 text-4xs font-bold border border-mist bg-white focus:border-wisteria rounded-lg outline-none"
+                            />
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleReviewInitiative(task.id, "reject")}
+                              className="px-3 py-2 border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-4xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" /> Reject
+                            </button>
+                            <button
+                              onClick={() => handleReviewInitiative(task.id, "approve")}
+                              className="px-3 py-2 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-4xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <Award className="h-3.5 w-3.5" /> Approve & Award XP
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1390,6 +1589,120 @@ export default function TasksManager({ currentMember }: { currentMember: Member 
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Tab 6: Report Initiative */}
+          {activeTab === "initiative" && canReportInitiative && (
+            <form onSubmit={handleSubmitInitiative} className="space-y-5">
+              <div className="bg-amber-500/[0.03] border border-amber-200/30 p-4 rounded-2xl flex items-start gap-3">
+                <Lightbulb className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="text-4xs font-bold text-ink block">Report a Voluntary Initiative</span>
+                  <span className="text-[10px] font-semibold text-ink/50 block">
+                    Did something great for the society on your own? Submit it here with proof, and your department director will review and award XP based on impact.
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid gap-5">
+                <div className="space-y-1.5">
+                  <label className="text-4xs font-bold text-ink uppercase tracking-wider block">Initiative Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={initTitle}
+                    onChange={(e) => setInitTitle(e.target.value)}
+                    placeholder="e.g. Redesigned the society's event poster templates"
+                    className="w-full px-4 py-3 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none transition-all placeholder:text-ink/30"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-4xs font-bold text-ink uppercase tracking-wider block">Description & Context</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={initDesc}
+                    onChange={(e) => setInitDesc(e.target.value)}
+                    placeholder="Describe what you did, why it matters, and how it benefits the society..."
+                    className="w-full p-3.5 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none resize-none transition-all placeholder:text-ink/30"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-4xs font-bold text-ink uppercase tracking-wider block">Proof of Completion</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={initProof}
+                    onChange={(e) => setInitProof(e.target.value)}
+                    placeholder="Links to your work (GitHub repos, deployed sites, design files, docs), or a detailed explanation of outcomes..."
+                    className="w-full p-3.5 text-4xs font-semibold border border-mist bg-white focus:border-wisteria rounded-xl outline-none resize-none transition-all placeholder:text-ink/30 font-mono"
+                  />
+                </div>
+
+                <div className="space-y-2.5 text-left">
+                  <label className="text-4xs font-bold text-ink uppercase tracking-wider block">
+                    Screenshot Proof (Optional)
+                  </label>
+                  
+                  {initProofImage ? (
+                    <div className="relative inline-block group">
+                      <img 
+                        src={initProofImage} 
+                        alt="Initiative proof preview" 
+                        className="max-h-36 rounded-lg border border-mist object-contain bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setInitProofImage(null)}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-1 border border-white shadow-xs hover:bg-red-600 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 border border-mist hover:border-wisteria hover:bg-wisteria/5 text-ink/75 font-semibold text-4xs p-2.5 px-4 rounded-xl cursor-pointer transition-all shadow-3xs">
+                        <ImageIcon className="h-3.5 w-3.5 text-ink/40" />
+                        <span>Choose Screenshot</span>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 2 * 1024 * 1024) {
+                                alert("Image file size should be less than 2MB.");
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setInitProofImage(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                      <span className="text-[10px] text-ink/40">PNG, JPG, JPEG (Max 2MB)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={submittingInitiative || !initTitle.trim() || !initDesc.trim() || !initProof.trim()}
+                  className="px-6 py-3 bg-wisteria hover:bg-wisteria/90 disabled:opacity-50 text-4xs font-bold text-white rounded-xl transition-all shadow-3xs flex items-center gap-1.5 cursor-pointer active:scale-[0.98]"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {submittingInitiative ? "Submitting..." : "Submit Initiative for Review"}
+                </button>
+              </div>
+            </form>
           )}
         </>
       )}

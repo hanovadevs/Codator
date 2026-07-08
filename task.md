@@ -1,0 +1,56 @@
+# Overhaul TODO List
+
+- [x] Create interactive terminal component (`components/ui/live-terminal.tsx`) in minimalist light mode
+- [x] Create dev sandbox/tool widget (`components/ui/dev-sandbox.tsx`)
+- [x] Modify `app/(public)/page.tsx` (Homepage redesign with premium layout, terminal integration, dev stack, and spring physics)
+- [x] Modify `components/navigation/navbar.tsx` (Floating pill blur navbar, slide animations)
+- [x] Build & Verify build correctness
+- [x] Redesign downloaded pass card layout to be futuristic and sleek (`app/api/pass/[id]/route.tsx`)
+- [x] Add Learning Roadmaps & Recruitment criteria to all Phyla pages (`app/(public)/phylum/[slug]/page.tsx`)
+- [x] Add Task Assignment & XP Gamification System:
+  - [x] Create `db_tasks.sql` migration script for public.tasks and public.members.xp
+  - [x] Create task creation API (`app/api/tasks/create/route.ts`)
+  - [x] Create task submission API (`app/api/tasks/submit-proof/route.ts`)
+  - [x] Create task review API (`app/api/tasks/review/route.ts`)
+  - [x] Create front-end `TasksManager` client component (`components/portal/tasks-manager.tsx`)
+  - [x] Integrate `TasksManager` and update gamification calculations in portal dashboard (`app/portal/page.tsx`)
+- [x] Advanced Tasks Portal Page & Sidebar Link Shell:
+  - [x] Create dedicated page layout (`app/portal/tasks/page.tsx`)
+  - [x] Add Tasks navigation link to sidebar drawer shell (`components/portal/portal-layout-shell.tsx`)
+  - [x] Build advanced Tasks filtering, member searches, and code-block reviews UI
+- [x] Assigned History Outbox & Members XP Leaderboard:
+  - [x] Enable RLS overrides for Presidents, Vice Presidents, and Mentors in `db_tasks.sql`
+  - [x] Implement Outbox history list tab showing all tasks assigned by current leader (with status indicators and a revoke action)
+  - [x] Implement Members XP standings leaderboard tab (sorted by highest XP, with name filter)
+- [x] XP History Timeline & Screenshot Proof Uploads:
+  - [x] Add `proof_image` column to the `tasks` table schema inside `db_tasks.sql`
+  - [x] Update task proof submission API to accept and store optional base64 image strings
+  - [x] Create user interface file picker input and thumbnail preview inside the completion reporter form
+  - [x] Render attached screenshot proof in the review queues and completed outbox lists
+  - [x] Build dynamically merged, date-sorted XP Transaction History timeline log of tasks and events inside the My Tasks panel
+- [x] Deadline Time Limits & Extensions System:
+  - [x] Add deadline `due_at` and extension request parameters to database table schema (`db_tasks.sql`)
+  - [x] Implement `check_expired_tasks()` PGSQL database procedure to cancel expired tasks and deduct 10 XP automatically
+  - [x] Integrate RPC query trigger into tasks loading functions in the client interface
+  - [x] Create new endpoint for requesting task extensions (`app/api/tasks/request-extension/route.ts`)
+  - [x] Create new endpoint for reviewing task extensions (`app/api/tasks/review-extension/route.ts`)
+  - [x] Add time-picker inputs to task assignment form and extension request form panels
+  - [x] Render inline extension requests approval queue inside the Verify Tasks panel for leaders
+- [x] Agency Credits & Search Engine Optimization (SEO):
+  - [x] Add "Designed & Developed by HanovaDevs Digital Agency" signature and hyper-link to the global page footer
+  - [x] Add HanovaDevs Digital Agency creator/publisher details and search keywords to Root Metadata Configuration
+  - [x] Create Dynamic Sitemap (`app/sitemap.ts`) to programmatically output XML sitemaps for Google indexing
+  - [x] Create Robots configuration (`app/robots.ts`) to instruct web crawlers and restrict portal indexing
+- [x] Sleeker Personal Portal Dashboard & Dev Utility Toolbox:
+  - [x] Create `DashboardTools` component (`components/portal/dashboard-tools.tsx`)
+  - [x] Add active sprint tasks tracking with quick link to tasks console
+  - [x] Integrate interactive tabbed developer tools: Base64 Encoder/Decoder, Markdown Assistant, Epoch Timestamp Clock
+  - [x] Render toolbox widget dynamically inside the main portal dashboard page (`app/portal/page.tsx`)
+- [x] Fix Tasks & Sprints Hub Layout Wrapping Bug:
+  - [x] Change the title header flex layout container parameters to stack (`lg:flex-row`) to prevent narrow vertical word splitting.
+  - [x] Increase the subtitle font size layout (`text-3xs font-semibold`) for premium, readable text rendering.
+- [x] Admin XP Leaderboard & Bonus Awards System:
+  - [x] Create admin grant-xp API endpoint (`app/api/admin/grant-xp/route.ts`)
+  - [x] Create custom client panel for listing and sorting members by XP power or completed tasks (`components/admin/xp-manager-client.tsx`)
+  - [x] Add dynamic Modal to award custom XP amounts with justification reasons
+  - [x] Build server component page route (`app/admin/(dashboard)/xp/page.tsx`) and add sidebar drawer navigation shell links

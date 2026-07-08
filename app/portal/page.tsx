@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { IdCard, Calendar, ArrowRight, Award, Flame, Zap, Megaphone, Info, AlertTriangle, Briefcase, Trophy, Star, ShieldCheck } from "lucide-react";
+import DashboardTools from "@/components/portal/dashboard-tools";
 
 export const revalidate = 0; // Dynamic dashboard
 
@@ -299,6 +300,9 @@ export default async function PortalDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Interactive Developer Tools & Active Sprint Widget */}
+      <DashboardTools memberId={member.id} />
 
       {/* Announcements Broadcast Section */}
       <div className="border border-mist rounded-3xl bg-paper/30 p-6 space-y-6">

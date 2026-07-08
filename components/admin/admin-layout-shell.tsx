@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  Award,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,6 +38,7 @@ export default function AdminLayoutShell({
     { href: "/admin", label: "Overview", icon: LayoutDashboard },
     { href: "/admin/applications", label: "Applications", icon: FileText },
     { href: "/admin/members", label: "Members", icon: Users },
+    { href: "/admin/xp", label: "XP & Sprints Manager", icon: Award },
     { href: "/admin/events", label: "Events", icon: Calendar },
     { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
     { href: "/admin/settings", label: "Settings", icon: Settings },
