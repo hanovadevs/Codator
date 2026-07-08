@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Prevent top-tier members from self-reporting (they can assign XP directly)
-    const posLower = member.position.toLowerCase();
+    const posLower = (member.position || "").toLowerCase();
     const isTopTier =
       posLower.includes("president") || posLower.includes("mentor");
 
@@ -57,84 +57,99 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Find the appropriate reviewer:
-    //    - If the member is a Director/Head/Co-Head, route to President/VP
-    //    - Otherwise, route to a Director in their department
+    // 5. Find the appropriate reviewer using a cascading fallback strategy:
+    //    Priority 1: Department Director/Head (for regular members)
+    //    Priority 2: Any President/VP/Mentor (for director-tier or if no dept director)
+    //    Priority 3: Any admin user
+    //    Priority 4: Self-assign (the member's own ID) as absolute last resort
+
     const isDirectorTier =
       posLower.includes("director") || posLower.includes("head");
 
-    let reviewerQuery;
-    if (isDirectorTier) {
-      // Route to any President or Vice President
-      reviewerQuery = supabase
-        .from("members")
-        .select("id")
-        .eq("status", "active")
-        .or(
-          `position.ilike.%president%,position.ilike.%mentor%`
-        )
-        .limit(1)
-        .maybeSingle();
-    } else {
-      // Route to a Director in their department
-      reviewerQuery = supabase
+    let reviewerId: string | null = null;
+
+    if (!isDirectorTier) {
+      // Try to find a Director/Head in the member's department first
+      const { data: deptDirectors } = await supabase
         .from("members")
         .select("id")
         .eq("status", "active")
         .eq("department", member.department)
-        .or(
-          `position.ilike.%director%,position.ilike.%head%`
-        )
-        .limit(1)
-        .maybeSingle();
+        .neq("id", member.id)
+        .or("position.ilike.%director%,position.ilike.%head%")
+        .limit(1);
+
+      if (deptDirectors && deptDirectors.length > 0) {
+        reviewerId = deptDirectors[0].id;
+      }
     }
 
-    const { data: reviewer, error: reviewerError } = await reviewerQuery;
-
-    if (reviewerError || !reviewer) {
-      // Fallback: If no reviewer can be found, route to any president
-      const { data: fallback } = await supabase
+    // Fallback: Find any President, VP, or Mentor
+    if (!reviewerId) {
+      const { data: topTierMembers } = await supabase
         .from("members")
         .select("id")
         .eq("status", "active")
-        .or(
-          `position.ilike.%president%,position.ilike.%mentor%`
-        )
-        .limit(1)
-        .maybeSingle();
+        .neq("id", member.id)
+        .or("position.ilike.%president%,position.ilike.%mentor%")
+        .limit(1);
 
-      if (!fallback) {
+      if (topTierMembers && topTierMembers.length > 0) {
+        reviewerId = topTierMembers[0].id;
+      }
+    }
+
+    // Fallback 2: Find any admin user
+    if (!reviewerId) {
+      const { data: adminMembers } = await supabase
+        .from("members")
+        .select("id")
+        .eq("status", "active")
+        .eq("role", "admin")
+        .neq("id", member.id)
+        .limit(1);
+
+      if (adminMembers && adminMembers.length > 0) {
+        reviewerId = adminMembers[0].id;
+      }
+    }
+
+    // Fallback 3: Find any Director/Head from any department
+    if (!reviewerId) {
+      const { data: anyDirectors } = await supabase
+        .from("members")
+        .select("id")
+        .eq("status", "active")
+        .neq("id", member.id)
+        .or("position.ilike.%director%,position.ilike.%head%")
+        .limit(1);
+
+      if (anyDirectors && anyDirectors.length > 0) {
+        reviewerId = anyDirectors[0].id;
+      }
+    }
+
+    // Last resort: assign to self (will show up in own review queue if they also have canAssign)
+    if (!reviewerId) {
+      // Find literally any other active member
+      const { data: anyMember } = await supabase
+        .from("members")
+        .select("id")
+        .eq("status", "active")
+        .neq("id", member.id)
+        .limit(1);
+
+      if (anyMember && anyMember.length > 0) {
+        reviewerId = anyMember[0].id;
+      } else {
         return NextResponse.json(
           {
             error:
-              "No eligible reviewer found. Please contact your department director.",
+              "No other active members found to review your initiative. Please contact an administrator.",
           },
           { status: 404 }
         );
       }
-
-      // Use fallback reviewer
-      const { error: insertError } = await supabase.from("tasks").insert({
-        title: `[Initiative] ${title.trim()}`,
-        description: description.trim(),
-        xp_reward: 0, // XP is decided by the reviewer
-        assigned_by: fallback.id,
-        assigned_to: member.id,
-        status: "pending_review",
-        proof: proof.trim(),
-        proof_image: proof_image || null,
-        submitted_at: new Date().toISOString(),
-      });
-
-      if (insertError) {
-        console.error("Error creating initiative task:", insertError);
-        return NextResponse.json(
-          { error: "Failed to submit initiative." },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({ success: true });
     }
 
     // 6. Insert initiative task with status "pending_review"
@@ -142,7 +157,7 @@ export async function POST(request: Request) {
       title: `[Initiative] ${title.trim()}`,
       description: description.trim(),
       xp_reward: 0, // XP is decided by the reviewer
-      assigned_by: reviewer.id,
+      assigned_by: reviewerId,
       assigned_to: member.id,
       status: "pending_review",
       proof: proof.trim(),

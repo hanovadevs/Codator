@@ -54,3 +54,11 @@
   - [x] Create custom client panel for listing and sorting members by XP power or completed tasks (`components/admin/xp-manager-client.tsx`)
   - [x] Add dynamic Modal to award custom XP amounts with justification reasons
   - [x] Build server component page route (`app/admin/(dashboard)/xp/page.tsx`) and add sidebar drawer navigation shell links
+- [x] Initiative Self-Report & Director Review System:
+  - [x] Create submit-initiative API endpoint (`app/api/tasks/submit-initiative/route.ts`)
+  - [x] Create review-initiative API endpoint (`app/api/tasks/review-initiative/route.ts`) with custom XP award input
+  - [x] Add "Report Initiative" tab button (visible to non-top-tier members) in TasksManager
+  - [x] Build initiative submission form with title, description, proof text, and screenshot upload
+  - [x] Auto-route submissions to appropriate department director or president for review
+  - [x] Add initiative review cards in Verify Tasks tab with custom XP input field and approve/reject buttons
+  - [x] Split pending reviews into regular task reviews and initiative submissions with separate badges

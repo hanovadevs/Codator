@@ -76,14 +76,15 @@ export async function POST(request: Request) {
     }
 
     // 5. Verify review permission
-    const posLower = reviewer.position.toLowerCase();
+    const posLower = (reviewer.position || "").toLowerCase();
     const isTopTier =
       posLower.includes("president") || posLower.includes("mentor");
     const isDirectorTier =
       posLower.includes("director") || posLower.includes("head");
+    const isAdmin = reviewer.role === "admin";
     const isAssigner = task.assigned_by === reviewer.id;
 
-    if (!isAssigner && !isTopTier && !isDirectorTier) {
+    if (!isAssigner && !isTopTier && !isDirectorTier && !isAdmin) {
       return NextResponse.json(
         {
           error:
