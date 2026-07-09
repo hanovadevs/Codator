@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin, Sparkles, Lightbulb, Code, Rocket, Megaphone } from "lucide-react";
-import ConstellationReveal from "@/components/hero/constellation-reveal";
 import { createClient } from "@/lib/supabase/client";
 import LiveTerminal from "@/components/ui/live-terminal";
 import DevSandbox from "@/components/ui/dev-sandbox";
@@ -181,7 +180,7 @@ export default function HomePage() {
         {/* Glassmorphic Gradient Overlay to cover the left side for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#F8F8FC] via-[#F8F8FC]/90 via-40% to-transparent z-0" />
 
-        <ConstellationReveal />
+
 
         <div className="relative mx-auto max-w-7xl z-10 py-16 w-full flex flex-col justify-between min-h-[75vh]">
           {/* Main Hero Content Split */}

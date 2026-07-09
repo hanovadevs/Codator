@@ -73,3 +73,5 @@
   - [x] Implement automatic invitation email blasts notifying all active members when events are published
   - [x] Overhaul admin events control room panel (`components/admin/events-client.tsx`) with search inputs and category filters
   - [x] Upgrade public events listing layout (`app/(public)/events/page.tsx`) and coordinates details page (`app/(public)/events/[slug]/page.tsx`)
+- [x] Clean Up Homepage Hero Background:
+  - [x] Remove the floating node/constellation network graphics overlay from the homepage hero panel
