@@ -67,3 +67,9 @@
   - [x] Group executive leadership into Core Body cards with dynamic quote grids, styled position badges, and color accents
   - [x] Group department operations into sleek collapsible Accordions for Tech, Media, Research, and Event Management Phyla
   - [x] Integrate interactive join-us CTA banner and custom society leadership statistics
+- [x] Interactive Events Board & Notifications Blast:
+  - [x] Resolve RLS banner image uploading violation by converting images to base64 strings
+  - [x] Create event administration API (`app/api/admin/events/route.ts`) for unified event updates
+  - [x] Implement automatic invitation email blasts notifying all active members when events are published
+  - [x] Overhaul admin events control room panel (`components/admin/events-client.tsx`) with search inputs and category filters
+  - [x] Upgrade public events listing layout (`app/(public)/events/page.tsx`) and coordinates details page (`app/(public)/events/[slug]/page.tsx`)

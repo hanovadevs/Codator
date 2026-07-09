@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin, Sparkles, Lightbulb, Code, Rocket } from "lucide-react";
+import { ArrowRight, Terminal, Cpu, Globe, Users, Calendar, MapPin, Sparkles, Lightbulb, Code, Rocket, Megaphone } from "lucide-react";
 import ConstellationReveal from "@/components/hero/constellation-reveal";
 import { createClient } from "@/lib/supabase/client";
 import LiveTerminal from "@/components/ui/live-terminal";
@@ -94,28 +94,40 @@ const phyla = [
 
 export default function HomePage() {
   const [events, setEvents] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    async function loadEvents() {
+    async function loadData() {
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
+        
+        // Load events
+        const { data: eventData, error: eventError } = await supabase
           .from("events")
           .select("*")
           .eq("is_published", true)
           .order("date_start", { ascending: true })
           .limit(3);
-        if (error) throw error;
-        setEvents(data || []);
+        if (eventError) throw eventError;
+        setEvents(eventData || []);
+
+        // Load announcements
+        const { data: annData, error: annError } = await supabase
+          .from("announcements")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(3);
+        if (annError) throw annError;
+        setAnnouncements(annData || []);
       } catch (err) {
-        console.error("Error loading events for homepage:", err);
+        console.error("Error loading homepage data:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadEvents();
+    loadData();
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -781,6 +793,130 @@ export default function HomePage() {
                 <Calendar className="mx-auto h-8 w-8 text-ink/35 mb-3 animate-bounce" />
                 <p className="text-xs text-ink/55 font-bold">No upcoming events scheduled at the moment.</p>
                 <p className="text-5xs text-ink/45 mt-1 font-semibold">Check back later or join our community to stay updated!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 4.1 LATEST ANNOUNCEMENTS SECTION */}
+      <section className="py-20 sm:py-24 border-b border-mist/40 bg-[#F0EDF6]/10 relative overflow-hidden">
+        {/* Soft background glow */}
+        <div className="absolute top-1/2 left-1/4 w-[30vw] h-[30vw] rounded-full bg-wisteria/5 blur-[90px] pointer-events-none" />
+
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <motion.span
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/45 backdrop-blur-md px-3.5 py-1 text-5xs font-bold uppercase tracking-widest text-wisteria shadow-[0_4px_12px_rgba(0,0,0,0.02)] mb-3"
+              >
+                <Megaphone className="h-3.5 w-3.5 text-wisteria animate-bounce" />
+                Latest Board Broadcasts
+              </motion.span>
+              <motion.h2
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="font-display text-2xl font-black tracking-tight text-ink sm:text-3xl text-[#1D1B26]"
+              >
+                Notices & Announcements
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="mt-2 text-xs text-ink/60 font-semibold"
+              >
+                Get real-time updates from the executive cabinet and departments.
+              </motion.p>
+            </div>
+            <Link
+              href="/announcements"
+              className="inline-flex items-center text-xs font-bold text-wisteria hover:underline group self-start sm:self-end"
+            >
+              See all announcements
+              <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {loading ? (
+              [1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="animate-pulse flex flex-col justify-between rounded-2xl border border-white/80 bg-white/20 backdrop-blur-md p-5 shadow-xs h-56"
+                >
+                  <div className="space-y-4">
+                    <div className="h-4 bg-ink/10 rounded w-16" />
+                    <div className="h-6 bg-ink/10 rounded w-3/4" />
+                    <div className="h-12 bg-ink/10 rounded w-full" />
+                  </div>
+                </div>
+              ))
+            ) : announcements.length > 0 ? (
+              announcements.map((ann, idx) => {
+                let badgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+                let accentColor = "border-blue-400";
+                if (ann.category === "urgent") {
+                  badgeClass = "bg-red-50 text-red-700 border-red-200";
+                  accentColor = "border-red-400";
+                } else if (ann.category === "opportunity") {
+                  badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                  accentColor = "border-emerald-400";
+                } else if (ann.category === "event") {
+                  badgeClass = "bg-purple-50 text-purple-700 border-purple-200";
+                  accentColor = "border-purple-400";
+                }
+
+                return (
+                  <motion.div
+                    key={ann.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: idx * 0.08 }}
+                    className={`flex flex-col justify-between rounded-3xl border border-white/80 hover:border-wisteria/40 bg-white/35 backdrop-blur-md p-6 shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 group cursor-pointer`}
+                  >
+                    <div className="space-y-3.5">
+                      <div className="flex items-center justify-between">
+                        <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-5xs font-bold uppercase tracking-wider border ${badgeClass}`}>
+                          {ann.category}
+                        </span>
+                        <span className="text-5xs font-mono text-ink/45 font-bold">
+                          {new Date(ann.created_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <h3 className="font-display text-xs sm:text-sm font-bold text-[#1D1B26] leading-snug group-hover:text-wisteria transition-colors line-clamp-1">
+                        {ann.title}
+                      </h3>
+                      <p className="text-4xs font-semibold text-ink/65 leading-relaxed line-clamp-3">
+                        {ann.content}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-mist/30">
+                      <Link
+                        href="/announcements"
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-wisteria group-hover:gap-1.5 transition-all"
+                      >
+                        Read announcement <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center py-12 border border-dashed border-mist rounded-3xl bg-white/20">
+                <Megaphone className="mx-auto h-8 w-8 text-ink/35 mb-3" />
+                <p className="text-xs text-ink/55 font-bold">No announcements posted recently.</p>
+                <p className="text-5xs text-ink/45 mt-1 font-semibold">Check back later or register to stay in the loop!</p>
               </div>
             )}
           </div>

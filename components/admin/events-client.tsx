@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion as m, AnimatePresence as AP } from "framer-motion";
-import { Calendar, MapPin, Users, Plus, X, Edit, Trash2, Globe, FileText, Check, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Users, Plus, X, Edit, Trash2, Globe, FileText, Check, Upload, Image as ImageIcon, Loader2, Search, CheckCircle, Mail } from "lucide-react";
 
 interface Event {
   id: string;
@@ -74,6 +74,11 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Search, Filters & Blast States
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [emailNotificationResult, setEmailNotificationResult] = useState<{ sent: number; total: number } | null>(null);
 
   const supabase = createClient();
 
@@ -249,7 +254,7 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
     setEditorOpen(true);
   };
 
-  // Upload banner file to Supabase Storage
+  // Convert banner file to Base64 Data URL to bypass storage RLS configuration issues
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -258,23 +263,26 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
     setErrorMsg("");
 
     const file = files[0];
-    const fileExt = file.name.split(".").pop() || "";
-    const fileName = generateRandomFileName(fileExt);
-    const filePath = `banners/${fileName}`;
+    if (file.size > 3 * 1024 * 1024) {
+      setErrorMsg("Image file size should be less than 3MB.");
+      setIsUploading(false);
+      return;
+    }
 
     try {
-      const { error: uploadError } = await supabase.storage
-        .from("event-banners")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage.from("event-banners").getPublicUrl(filePath);
-      setBannerUrl(data.publicUrl);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBannerUrl(reader.result as string);
+        setIsUploading(false);
+      };
+      reader.onerror = () => {
+        setErrorMsg("Failed to read image file.");
+        setIsUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
-      console.error("Error uploading file:", err);
-      setErrorMsg(err instanceof Error ? err.message : "Failed to upload image. Make sure the 'event-banners' bucket exists and is public.");
-    } finally {
+      console.error("Error processing file:", err);
+      setErrorMsg("Failed to process image file.");
       setIsUploading(false);
     }
   };
@@ -283,14 +291,16 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
     e.preventDefault();
     setIsSaving(true);
     setErrorMsg("");
+    setEmailNotificationResult(null);
 
     const eventPayload = {
+      id: editingEvent?.id || null,
       title: title.trim(),
       slug: slug.trim(),
       description: description.trim(),
       category,
       date_start: new Date(dateStart).toISOString(),
-      date_end: new Date(dateEnd).toISOString(),
+      date_end: dateEnd ? new Date(dateEnd).toISOString() : null,
       location: location.trim(),
       capacity: Number(capacity),
       free_for_members: freeForMembers,
@@ -299,30 +309,28 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
     };
 
     try {
+      const res = await fetch("/api/admin/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(eventPayload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save event");
+
       if (editingEvent) {
-        // Update
-        const { data, error } = await supabase
-          .from("events")
-          .update(eventPayload)
-          .eq("id", editingEvent.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        setEvents(events.map((ev) => (ev.id === editingEvent.id ? data : ev)));
+        setEvents(events.map((ev) => (ev.id === editingEvent.id ? data.event : ev)));
       } else {
-        // Insert
-        const { data, error } = await supabase
-          .from("events")
-          .insert([eventPayload])
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        setEvents([data, ...events]);
+        setEvents([data.event, ...events]);
       }
+
+      if (data.published && data.emailsTotal > 0) {
+        setEmailNotificationResult({
+          sent: data.emailsSent || 0,
+          total: data.emailsTotal || 0,
+        });
+      }
+
       setEditorOpen(false);
     } catch (err) {
       console.error("Error saving event:", err);
@@ -355,32 +363,139 @@ export default function EventsClient({ initialEvents }: EventsClientProps) {
     });
   };
 
+  // Filter events
+  const filteredEvents = events.filter((ev) => {
+    const matchesSearch =
+      ev.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ev.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ev.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || ev.category.toLowerCase() === categoryFilter.toLowerCase();
+    return matchesSearch && matchesCategory;
+  });
+
+  // Calculate statistics
+  const stats = {
+    total: events.length,
+    published: events.filter((e) => e.is_published).length,
+    drafts: events.filter((e) => !e.is_published).length,
+    hackathons: events.filter((e) => e.category.toLowerCase() === "hackathon").length,
+    workshops: events.filter((e) => e.category.toLowerCase() === "workshop").length,
+  };
+
   return (
-    <div className="relative">
+    <div className="relative text-ink">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div className="flex flex-col gap-1">
-          <h1 className="font-display text-3xl font-bold tracking-tight text-ink">Events</h1>
-          <p className="text-sm text-ink/65">Create and manage your society events, hackathons, and seminars.</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-black tracking-tight text-ink flex items-center gap-2">
+            <Calendar className="h-6 w-6 text-wisteria animate-pulse" />
+            Events Board
+          </h1>
+          <p className="text-3xs text-ink/55 font-semibold">
+            Create, manage, and schedule society events. Registered members receive email notifications when events are published.
+          </p>
         </div>
         <button
-          onClick={() => openEditor(null)}
-          className="inline-flex items-center gap-2 rounded-lg bg-wisteria px-4 py-2.5 text-sm font-semibold text-paper hover:bg-wisteria/90 active:scale-[0.99] transition-all cursor-pointer"
+          onClick={() => { openEditor(null); setEmailNotificationResult(null); }}
+          className="inline-flex items-center gap-2 rounded-xl bg-wisteria px-5 py-2.5 text-4xs font-bold text-paper hover:bg-wisteria/90 active:scale-[0.98] transition-all cursor-pointer shadow-xs self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>New Event</span>
         </button>
       </div>
 
+      {/* Email Send Success Toast */}
+      <AP>
+        {emailNotificationResult && (
+          <m.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-3 p-4 mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/60 backdrop-blur-sm"
+          >
+            <div className="rounded-full bg-emerald-100 p-2 border border-emerald-200">
+              <CheckCircle className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div className="flex-1">
+              <span className="text-4xs font-bold text-[#1D1B26] block">Event Published & Blast Complete</span>
+              <span className="text-[10px] font-semibold text-emerald-600">
+                <Mail className="h-3 w-3 inline mr-0.5" />
+                {emailNotificationResult.sent} of {emailNotificationResult.total} members notified via email
+              </span>
+            </div>
+            <button onClick={() => setEmailNotificationResult(null)} className="text-emerald-400 hover:text-emerald-600 cursor-pointer">
+              <X className="h-4 w-4" />
+            </button>
+          </m.div>
+        )}
+      </AP>
+
+      {/* Statistics Ribbon */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+        {[
+          { label: "Total Events", value: stats.total, color: "#8B7FE8" },
+          { label: "Published", value: stats.published, color: "#10b981" },
+          { label: "Drafts", value: stats.drafts, color: "#f59e0b" },
+          { label: "Hackathons", value: stats.hackathons, color: "#ec4899" },
+          { label: "Workshops", value: stats.workshops, color: "#8b5cf6" },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className="border border-mist rounded-xl p-3.5 bg-white/30 flex items-center gap-3"
+          >
+            <span className="font-display text-xl font-black" style={{ color: s.color }}>
+              {s.value}
+            </span>
+            <span className="text-[9px] font-bold text-ink/40 uppercase tracking-widest">{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ink/30" />
+          <input
+            type="text"
+            placeholder="Search events by title, description, or location..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 text-4xs font-semibold border border-mist bg-white/50 rounded-xl focus:border-wisteria outline-none transition-all placeholder:text-ink/30"
+          />
+        </div>
+        <div className="flex gap-1.5 flex-wrap bg-[#F8F8FC] border border-mist/55 p-1 rounded-xl shrink-0">
+          {["all", "hackathon", "workshop", "seminar", "social"].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer capitalize ${
+                categoryFilter === cat
+                  ? "bg-white text-wisteria shadow-sm border border-mist/40"
+                  : "text-ink/50 hover:text-ink"
+              }`}
+            >
+              {cat === "all" ? "All" : cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Events List */}
-      {events.length === 0 ? (
-        <div className="border border-dashed border-mist rounded-2xl p-16 text-center text-ink/50 bg-paper/30">
-          <Calendar className="mx-auto h-12 w-12 text-ink/30 mb-4" />
-          <h3 className="font-display text-lg font-bold text-ink">No events found</h3>
-          <p className="text-sm text-ink/50 mt-1">Get started by creating your first society event!</p>
+      {filteredEvents.length === 0 ? (
+        <div className="border border-dashed border-mist rounded-3xl p-16 text-center text-ink/50 bg-white/30">
+          <Calendar className="mx-auto h-12 w-12 text-ink/25 mb-4 animate-pulse" />
+          <h3 className="font-display text-base font-bold text-ink">
+            {events.length === 0 ? "No events found" : "No matching events found"}
+          </h3>
+          <p className="text-4xs text-ink/50 mt-1">
+            {events.length === 0
+              ? "Get started by creating your first society event!"
+              : "Try adjusting your search query or filter category."}
+          </p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
+          {filteredEvents.map((event) => (
             <div
               key={event.id}
               className="group border border-mist rounded-2xl bg-paper/30 overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
